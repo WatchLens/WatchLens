@@ -26,9 +26,16 @@ class Settings(BaseSettings):
     # Cookie
     COOKIE_SECURE: bool = True  # Set False for local HTTP dev
 
-    # CORS — production only; localhost origins removed for deployed build.
+    # CORS allow-list. Defaults to local dev origins; override in
+    # production via the CORS_ORIGINS env var (JSON list, e.g.
+    # CORS_ORIGINS='["https://study.example.org"]').
     CORS_ORIGINS: list[str] = [
-        "https://openrecui.legenduck.me",
+        "http://localhost",
+        "http://localhost:80",
+        "http://localhost:8080",
+        "http://127.0.0.1",
+        "http://127.0.0.1:80",
+        "http://127.0.0.1:8080",
     ]
 
     class Config:

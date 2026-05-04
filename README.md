@@ -31,7 +31,7 @@ schema.
 
 ---
 
-## Quick start
+## Quick start (local)
 
 ```bash
 git clone https://github.com/legenduck/VidRecLab.git
@@ -40,8 +40,8 @@ cp .env.example .env       # set POSTGRES_PASSWORD, SECRET_KEY, ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
-Open `http://localhost:8080`, sign in with `ADMIN_LOGIN_ID` /
-`ADMIN_PASSWORD`, then in the admin UI:
+Open `http://localhost:8080` (override via `HOST_PORT` in `.env`), sign
+in with `ADMIN_LOGIN_ID` / `ADMIN_PASSWORD`, then in the admin UI:
 
 1. Create an experiment.
 2. Upload videos via CSV, or drop a dataset under `data/<name>/` for
@@ -52,6 +52,32 @@ Open `http://localhost:8080`, sign in with `ADMIN_LOGIN_ID` /
 5. Set the experiment to `active`. Events stream into the database.
 6. Monitor metrics in the **Stats** tab; export the events CSV when the
    study concludes.
+
+---
+
+## Deployment for user studies
+
+Local dev binds to `127.0.0.1` and serves over plain HTTP. Real user
+studies need participants to reach the platform from their own devices,
+which means a public hostname, HTTPS, and the matching cookie / CORS
+configuration. Set the following in `.env` before bringing the stack
+up:
+
+| Variable | Production value | Why |
+|----------|-----------------|-----|
+| `HOST_BIND` | `0.0.0.0` | Listen on all interfaces (or pair with a reverse proxy). |
+| `HOST_PORT` | `80` (or whatever your proxy expects) | Port the host binds. |
+| `COOKIE_SECURE` | `true` | Required for the auth cookie to survive over HTTPS. |
+| `CORS_ORIGINS` | `["https://your-study.example.org"]` | Allow-list the public origin participants will hit. |
+| `SECRET_KEY` | strong random | `openssl rand -hex 32`. |
+| `ADMIN_PASSWORD` | strong random | Used for the seeded admin account. |
+
+Put a TLS-terminating reverse proxy (nginx, Caddy, Cloudflare Tunnel)
+in front of the frontend container so traffic to participants travels
+over HTTPS. The platform itself is HTTP-only inside the Compose
+network; everything user-facing is the proxy's responsibility. Do not
+expose the backend container directly — the frontend's nginx already
+routes `/api` to it.
 
 ---
 
