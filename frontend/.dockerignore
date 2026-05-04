@@ -1,0 +1,34 @@
+# Secrets / env
+.env
+.env.*
+*.env
+
+# VCS
+.git
+.gitignore
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.vite/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dev cookies / creds
+cookies.txt
+*.cookies

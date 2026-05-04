@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+vendor/
+.pnp/
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+__pycache__/
+*.py[cod]
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+*.cache
+
+# Project files
+report.md
+
+# Dev artifacts / secrets
+cookies.txt
+*.cookies
+
+# Data folder - ignore contents but keep folder
+data/*
+!data/.gitkeep
