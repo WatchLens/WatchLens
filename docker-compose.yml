@@ -4,17 +4,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-openrecui}
+      POSTGRES_USER: ${POSTGRES_USER:-watchlens}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-openrecui}
+      POSTGRES_DB: ${POSTGRES_DB:-watchlens}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openrecui}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-watchlens}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
     networks:
-      - openrecui
+      - watchlens
 
   backend:
     build:
@@ -23,7 +23,7 @@ services:
     volumes:
       - ./data:/app/data:ro
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-openrecui}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-openrecui}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-watchlens}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-watchlens}
       SECRET_KEY: ${SECRET_KEY}
       JWT_EXPIRE_DAYS: ${JWT_EXPIRE_DAYS:-7}
       ADMIN_LOGIN_ID: ${ADMIN_LOGIN_ID:-admin}
@@ -35,7 +35,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - openrecui
+      - watchlens
 
   frontend:
     build:
@@ -49,7 +49,7 @@ services:
       - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-80}:80"
     restart: unless-stopped
     networks:
-      - openrecui
+      - watchlens
 
   # Data file serving (videos, thumbnails, etc.)
   data-nginx:
@@ -59,11 +59,11 @@ services:
       - ./nginx-data.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
     networks:
-      - openrecui
+      - watchlens
 
 volumes:
   postgres_data:
 
 networks:
-  openrecui:
+  watchlens:
     driver: bridge

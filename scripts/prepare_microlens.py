@@ -2,18 +2,22 @@
 """
 MicroLens Dataset Preparation Script
 
-Merges metadata from multiple source files and creates a CSV for Open Rec UI.
-Also copies video/thumbnail files to the target directory.
+Merges metadata from multiple MicroLens source files and produces a single
+CSV ready for upload to WatchLens. Also copies the video / thumbnail files
+into the platform's data directory.
 
-Source files:
+Source files (inside DATASET_DIR):
 - MicroLens-100k_duration.txt: video_id, duration
 - MicroLens-100k_likes_and_views.txt: video_id, likes, views
 - MicroLens-100k_title_en.csv: video_id, title
 
-Output:
-- CSV file ready for upload to Open Rec UI
-- Copied videos to data/MicroLens/videos/
-- Copied thumbnails to data/MicroLens/thumbnails/
+Output (inside OUTPUT_DIR):
+- microlens_videos.csv ready for the admin CSV upload
+- videos/ and thumbnails/ subdirectories
+
+Override the source / output locations via env vars:
+- MICROLENS_DATASET_DIR  path to the unzipped MicroLens-100k dataset
+- MICROLENS_OUTPUT_DIR   path inside the platform's data/ directory
 """
 
 import os
@@ -22,9 +26,11 @@ import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Paths
-DATASET_DIR = Path("/home/legenduck/MicroLens-100k-Dataset")
-OUTPUT_DIR = Path("/home/legenduck/open-rec-ui/data/MicroLens")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Paths (overridable via env)
+DATASET_DIR = Path(os.environ.get("MICROLENS_DATASET_DIR", str(REPO_ROOT / "MicroLens-100k-Dataset")))
+OUTPUT_DIR = Path(os.environ.get("MICROLENS_OUTPUT_DIR", str(REPO_ROOT / "data" / "MicroLens")))
 VIDEOS_SRC = DATASET_DIR / "MicroLens-100k_videos"
 THUMBNAILS_SRC = DATASET_DIR / "MicroLens-100k_covers"
 VIDEOS_DST = OUTPUT_DIR / "videos"
@@ -184,10 +190,10 @@ def copy_thumbnails(thumb_ids, max_workers=8):
 
 
 def create_csv(durations, likes_views, titles, video_ids, thumb_ids):
-    """Create CSV file for Open Rec UI upload"""
+    """Create CSV file for WatchLens upload"""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # CSV header matching Open Rec UI format
+    # CSV header matching WatchLens upload format
     # video_id,url,duration,title,thumbnail,category,tags,description,like_count,dislike_count,comment_count,channel_name
 
     rows = []

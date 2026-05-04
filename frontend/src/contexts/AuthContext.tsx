@@ -42,7 +42,6 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     // (→ 403) until the tab is closed.
     sessionStorage.removeItem('session_id')
     sessionStorage.removeItem('session_user_id')
-    sessionStorage.removeItem('open-rec-ui:daily-popup-session-shown')
     const response = await apiLogin(loginId, password)
     setUser(response.user)
     return response
@@ -58,8 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       setUser(null)
       sessionStorage.removeItem('session_id')
       sessionStorage.removeItem('session_user_id')
-      sessionStorage.removeItem('open-rec-ui:daily-popup-session-shown')
-    }
+      }
   }
 
   return (

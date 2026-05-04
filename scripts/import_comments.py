@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Import comments from a CSV file into the Open Rec UI database.
+Import comments from a CSV file into the WatchLens database.
 
 Usage:
   docker compose exec backend python -m scripts.import_comments \

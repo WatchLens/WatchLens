@@ -2,28 +2,34 @@
 """
 YouTube Shorts Dataset Preparation Script
 
-Reads the collected YouTube Shorts data and produces:
-1. A CSV file ready for upload to Open Rec UI (video metadata)
-2. A comments CSV file for bulk import via import_comments.py
+Reads collected YouTube Shorts data and produces:
+1. A video metadata CSV ready for upload to WatchLens.
+2. A comments CSV for bulk import via import_comments.py.
 
-Source files:
+Source files (inside SOURCE_DIR):
 - shorts_meta_all.csv: video metadata
 - shorts_export_all.json: full export with descriptions, thumbnail URLs, comments
-- videos_processed/: MP4 video files (already copied to data/youtube_shorts/videos/)
-- thumbnails/: JPG thumbnail files (already copied to data/youtube_shorts/thumbnails/)
 
-Output:
-- data/youtube_shorts/youtube_shorts_videos.csv  (for Open Rec UI CSV upload)
-- data/youtube_shorts/youtube_shorts_comments.csv (for import_comments.py)
+Output (inside OUTPUT_DIR — typically the platform's data/ directory):
+- youtube_shorts_videos.csv   (for the admin CSV upload)
+- youtube_shorts_comments.csv (for import_comments.py)
+
+Override paths via env vars:
+- YT_SHORTS_SOURCE_DIR  raw collection directory
+- YT_SHORTS_OUTPUT_DIR  destination inside the platform's data/ directory
 """
 
 import csv
+import io
 import json
+import os
 from pathlib import Path
 
-# Paths
-SOURCE_DIR = Path("/home/legenduck/youtube_shorts")
-OUTPUT_DIR = Path("/home/legenduck/open-rec-ui/data/youtube_shorts")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Paths (overridable via env)
+SOURCE_DIR = Path(os.environ.get("YT_SHORTS_SOURCE_DIR", str(REPO_ROOT / "youtube_shorts_raw")))
+OUTPUT_DIR = Path(os.environ.get("YT_SHORTS_OUTPUT_DIR", str(REPO_ROOT / "data" / "youtube_shorts")))
 VIDEOS_DIR = OUTPUT_DIR / "videos"
 
 META_CSV = SOURCE_DIR / "shorts_meta_all.csv"
@@ -53,7 +59,6 @@ def main():
     with open(META_CSV, "r", encoding="utf-8-sig") as f:
         # Strip BOM from all field names (file has double BOM)
         text = f.read().lstrip('\ufeff')
-        import io
         reader = csv.DictReader(io.StringIO(text))
         for row in reader:
             vid = row["video_id"].strip()

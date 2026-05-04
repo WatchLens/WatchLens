@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://openrecui:openrecui@localhost:5432/openrecui"
+    DATABASE_URL: str = "postgresql://watchlens:watchlens@localhost:5432/watchlens"
 
     # Auth
     SECRET_KEY: str

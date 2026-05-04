@@ -83,7 +83,7 @@ def extract_interactions(db: Session, experiment_id: uuid.UUID) -> List[Dict]:
 
 def write_inter_file(interactions: List[Dict], output_dir: str) -> str:
     """Write interactions in RecBole .inter format."""
-    inter_path = os.path.join(output_dir, "openrecui.inter")
+    inter_path = os.path.join(output_dir, "watchlens.inter")
     with open(inter_path, "w") as f:
         f.write("user_id:token\titem_id:token\trating:float\ttimestamp:float\n")
         for inter in interactions:
@@ -134,7 +134,7 @@ def train_and_predict(
         # RecBole configuration
         config_dict = {
             "model": model_name,
-            "dataset": "openrecui",
+            "dataset": "watchlens",
             "data_path": tmpdir,
             "USER_ID_FIELD": "user_id",
             "ITEM_ID_FIELD": "item_id",
@@ -259,7 +259,7 @@ def train_i2i_model(
 
         config_dict = {
             "model": model_name,
-            "dataset": "openrecui",
+            "dataset": "watchlens",
             "data_path": tmpdir,
             "USER_ID_FIELD": "user_id",
             "ITEM_ID_FIELD": "item_id",

@@ -5,15 +5,23 @@ to center 9:16 content area.
 
 1280x720 → center 405x720 (9:16)
 
+Override the target directory via the YT_SHORTS_THUMBS_DIR env var.
+
 Usage:
   python3 scripts/crop_thumbnails.py
 """
 
-from pathlib import Path
-from PIL import Image
+import os
 import sys
+from pathlib import Path
 
-THUMBS_DIR = Path("/home/legenduck/open-rec-ui/data/youtube_shorts/thumbnails")
+from PIL import Image
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+THUMBS_DIR = Path(os.environ.get(
+    "YT_SHORTS_THUMBS_DIR",
+    str(REPO_ROOT / "data" / "youtube_shorts" / "thumbnails"),
+))
 
 
 def crop_to_9_16(img: Image.Image) -> Image.Image:

@@ -21,7 +21,7 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    return os.getenv("DATABASE_URL", "postgresql://openrecui:openrecui@localhost:5432/openrecui")
+    return os.getenv("DATABASE_URL", "postgresql://watchlens:watchlens@localhost:5432/watchlens")
 
 
 def run_migrations_offline() -> None:
