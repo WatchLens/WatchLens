@@ -2,6 +2,7 @@ from uuid import UUID
 from collections import defaultdict
 from datetime import datetime, timedelta
 from io import StringIO
+from statistics import median
 from urllib.parse import quote
 import csv
 import json
@@ -172,14 +173,17 @@ def get_recommendation_evaluation(
     if not session_map:
         return _empty_evaluation(group_info)
 
-    # Step 2: Fetch relevant events in bulk
+    # Step 2: Fetch relevant events in bulk.
+    # Event-name drift: legacy VIDEO_START/VIDEO_END are no longer emitted
+    # by the frontend; the modern names are VIDEO_PLAY (per-play start) and
+    # VIDEO_ENDED (natural end + unmount-mid-play synthetic).
     session_ids = list(session_map.keys())
     rows = db.execute(
         text("""
-            SELECT session_id, video_id, event_type, position_in_feed, watch_ratio
+            SELECT session_id, video_id, event_type, watch_ratio, watch_duration, server_timestamp
             FROM events
             WHERE session_id = ANY(:sids)
-              AND event_type IN ('IMPRESSION', 'FEED_CLICK', 'VIDEO_START', 'VIDEO_END', 'LIKE')
+              AND event_type IN ('IMPRESSION', 'FEED_CLICK', 'VIDEO_PLAY', 'VIDEO_ENDED')
             ORDER BY session_id, server_timestamp
         """),
         {"sids": session_ids},
@@ -191,15 +195,31 @@ def get_recommendation_evaluation(
         session_events[row[0]].append({
             "video_id": row[1],
             "event_type": row[2],
-            "position": row[3],
-            "watch_ratio": row[4],
+            "watch_ratio": row[3],
+            "watch_duration": row[4],
+            "server_timestamp": row[5],
         })
 
-    # Step 4: Compute per-session metrics, aggregate by group
+    # Step 4: Compute per-session metrics, aggregate by group.
+    #
+    # Per-session signals collected:
+    #   - ctrs                : per-session FEED_CLICK ∩ impressions / impressions
+    #   - watch_durations     : pooled VIDEO_ENDED.watch_duration values (per-playback, replays counted)
+    #   - watch_ratios        : pooled VIDEO_ENDED.watch_ratio values (per-playback)
+    #   - session_lengths     : per-session unique VIDEO_PLAY count (paper case study definition)
+    #   - session_durations   : per-session (max - min) server_timestamp seconds
+    #
+    # Pool granularity differs intentionally:
+    #   - watch_duration / watch_ratio aggregate at playback granularity (each VIDEO_ENDED contributes one)
+    #   - session_length / session_duration aggregate at session granularity (one number per session)
     group_metrics = defaultdict(lambda: {
         "ctrs": [],
-        "watch_ratios": [], "engagement_rates": [],
-        "total_impressions": 0, "total_clicks": 0,
+        "watch_durations": [],
+        "watch_ratios": [],
+        "session_lengths": [],
+        "session_durations": [],
+        "total_impressions": 0,
+        "total_clicks": 0,
         "sessions_evaluated": 0,
     })
 
@@ -209,43 +229,56 @@ def get_recommendation_evaluation(
             continue
 
         impressions = [e for e in events if e["event_type"] == "IMPRESSION" and e["video_id"]]
-        clicks = {e["video_id"] for e in events if e["event_type"] in ("FEED_CLICK", "VIDEO_START") and e["video_id"]}
-        likes = {e["video_id"] for e in events if e["event_type"] == "LIKE" and e["video_id"]}
-        watch_ratios = [e["watch_ratio"] for e in events if e["event_type"] == "VIDEO_END" and e["watch_ratio"] is not None]
-
-        impression_videos = {e["video_id"] for e in impressions}
-        if not impression_videos:
-            # Still collect watch ratios even without impressions
-            if watch_ratios:
-                group_metrics[group_id]["watch_ratios"].extend(watch_ratios)
-            continue
+        feed_clicks = {e["video_id"] for e in events if e["event_type"] == "FEED_CLICK" and e["video_id"]}
+        play_video_ids = {e["video_id"] for e in events if e["event_type"] == "VIDEO_PLAY" and e["video_id"]}
+        ended_events = [e for e in events if e["event_type"] == "VIDEO_ENDED"]
 
         gm = group_metrics[group_id]
         gm["sessions_evaluated"] += 1
         gm["total_impressions"] += len(impressions)
 
-        # CTR
-        clicked_impressions = clicks & impression_videos
-        gm["total_clicks"] += len(clicked_impressions)
-        ctr = len(clicked_impressions) / len(impressions) if impressions else 0
-        gm["ctrs"].append(ctr)
+        # CTR — strict definition (FEED_CLICK only). Sessions with no
+        # impressions contribute nothing to the CTR mean (not 0/0 = NaN
+        # and not a synthetic 0 that would dilute the average).
+        impression_videos = {e["video_id"] for e in impressions}
+        if impressions:
+            clicked_impressions = feed_clicks & impression_videos
+            gm["total_clicks"] += len(clicked_impressions)
+            gm["ctrs"].append(len(clicked_impressions) / len(impressions))
 
-        # Engagement Rate
-        engaged = (clicks | likes) & impression_videos
-        eng_rate = len(engaged) / len(impressions) if impressions else 0
-        gm["engagement_rates"].append(eng_rate)
+        # Watch time + watch ratio — pooled across every VIDEO_ENDED in
+        # the session. Replays / loops contribute multiple values.
+        for e in ended_events:
+            if e["watch_duration"] is not None:
+                gm["watch_durations"].append(float(e["watch_duration"]))
+            if e["watch_ratio"] is not None:
+                gm["watch_ratios"].append(float(e["watch_ratio"]))
 
-        # Watch ratios
-        if watch_ratios:
-            gm["watch_ratios"].extend(watch_ratios)
+        # Session length (videos): unique VIDEO_PLAY count. Bounce sessions
+        # contribute 0 (which is the correct signal — they showed up but
+        # didn't watch anything).
+        gm["session_lengths"].append(len(play_video_ids))
+
+        # Session duration (seconds): max - min server_timestamp across
+        # all events in this session window. Single-event sessions yield 0.
+        ts_list = [e["server_timestamp"] for e in events if e["server_timestamp"] is not None]
+        if ts_list:
+            duration_sec = (max(ts_list) - min(ts_list)).total_seconds()
+            gm["session_durations"].append(duration_sec)
 
     # Step 5: Aggregate
-    def _avg(lst):
+    def _mean(lst):
         return round(sum(lst) / len(lst), 4) if lst else 0.0
+
+    def _median(lst):
+        return round(median(lst), 4) if lst else 0.0
 
     groups_result = []
     overall_ctrs = []
-    overall_watch_ratios, overall_engagements = [], []
+    overall_watch_durations = []
+    overall_watch_ratios = []
+    overall_session_lengths = []
+    overall_session_durations = []
     overall_impressions, overall_clicks, overall_sessions = 0, 0, 0
 
     for gid, info in group_info.items():
@@ -254,26 +287,32 @@ def get_recommendation_evaluation(
             "group_id": str(gid),
             "group_name": info["name"],
             "algorithm_config": info["algorithm_config"],
-            "ctr": _avg(gm["ctrs"]),
-            "avg_watch_ratio": _avg(gm["watch_ratios"]),
-            "engagement_rate": _avg(gm["engagement_rates"]),
+            "ctr": _mean(gm["ctrs"]),
+            "avg_watch_time_seconds": _mean(gm["watch_durations"]),
+            "watch_ratio_median": _median(gm["watch_ratios"]),
+            "session_length_median": _median(gm["session_lengths"]),
+            "session_duration_median_seconds": _median(gm["session_durations"]),
             "total_impressions": gm["total_impressions"],
             "total_clicks": gm["total_clicks"],
             "sessions_evaluated": gm["sessions_evaluated"],
         })
 
         overall_ctrs.extend(gm["ctrs"])
+        overall_watch_durations.extend(gm["watch_durations"])
         overall_watch_ratios.extend(gm["watch_ratios"])
-        overall_engagements.extend(gm["engagement_rates"])
+        overall_session_lengths.extend(gm["session_lengths"])
+        overall_session_durations.extend(gm["session_durations"])
         overall_impressions += gm["total_impressions"]
         overall_clicks += gm["total_clicks"]
         overall_sessions += gm["sessions_evaluated"]
 
     return {
         "overall": {
-            "ctr": _avg(overall_ctrs),
-            "avg_watch_ratio": _avg(overall_watch_ratios),
-            "engagement_rate": _avg(overall_engagements),
+            "ctr": _mean(overall_ctrs),
+            "avg_watch_time_seconds": _mean(overall_watch_durations),
+            "watch_ratio_median": _median(overall_watch_ratios),
+            "session_length_median": _median(overall_session_lengths),
+            "session_duration_median_seconds": _median(overall_session_durations),
             "total_impressions": overall_impressions,
             "total_clicks": overall_clicks,
             "total_sessions_evaluated": overall_sessions,
@@ -288,13 +327,19 @@ def _empty_evaluation(group_info: dict) -> dict:
         "group_id": str(gid), "group_name": info["name"],
         "algorithm_config": info["algorithm_config"],
         "ctr": 0,
-        "avg_watch_ratio": 0, "engagement_rate": 0,
+        "avg_watch_time_seconds": 0,
+        "watch_ratio_median": 0,
+        "session_length_median": 0,
+        "session_duration_median_seconds": 0,
         "total_impressions": 0, "total_clicks": 0, "sessions_evaluated": 0,
     }
     return {
         "overall": {
             "ctr": 0,
-            "avg_watch_ratio": 0, "engagement_rate": 0,
+            "avg_watch_time_seconds": 0,
+            "watch_ratio_median": 0,
+            "session_length_median": 0,
+            "session_duration_median_seconds": 0,
             "total_impressions": 0, "total_clicks": 0, "total_sessions_evaluated": 0,
         },
         "groups": [empty_group(gid, info) for gid, info in group_info.items()],

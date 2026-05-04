@@ -59,7 +59,7 @@ export default function TiktokWatch(): JSX.Element {
     <WatchSurface video={video} relatedVideos={related}>
       <div className="h-screen bg-black flex overflow-hidden">
         {/* ── Left: 9:16 video, vertically centered ── */}
-        <div className="flex-[1.5] flex items-center justify-center relative px-4">
+        <div className="flex-1 flex items-center justify-center relative px-4">
           <button
             onClick={() => navigate('/')}
             className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-black/40 backdrop-blur text-white flex items-center justify-center hover:bg-black/60"
@@ -89,7 +89,7 @@ export default function TiktokWatch(): JSX.Element {
         </div>
 
         {/* ── Right: meta + horizontal actions + tabbed panel ── */}
-        <div className="flex-1 max-w-[480px] bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800">
+        <div className="flex-1 max-w-[720px] bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800">
           {/* Channel + caption + actions */}
           <div className="p-5 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ export default function TiktokWatch(): JSX.Element {
                 {related.length === 0 ? (
                   <div className="py-8 text-center text-sm text-gray-400">No related videos</div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {related.map((rv, i) => {
                       const thumb = rv.resolved_url?.thumbnail_url || rv.thumbnail_url
                       return (

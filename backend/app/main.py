@@ -41,8 +41,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="VidRecLab",
-    description="Video Recommendation Research Platform",
+    title="WatchLens",
+    description="A Configurable Platform for Online Video Recommendation Experiments",
     version="1.0.0",
     lifespan=lifespan,
 )

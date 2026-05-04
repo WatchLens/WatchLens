@@ -372,8 +372,8 @@ export default function ShortsWatch({
       <nav style={{ height: 56, background: t.bg, borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0 }}>
         {/* Logo */}
         <div onClick={goToFeed} style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 18, fontWeight: 700, letterSpacing: -0.5, color: t.text, cursor: 'pointer', flexShrink: 0 }}>
-          <img src="/icon.svg" alt="VidRecLab" style={{ width: 28, height: 28, marginRight: 6 }} />
-          VidRecLab
+          <img src="/icon.svg" alt="WatchLens" style={{ width: 28, height: 28, marginRight: 6 }} />
+          WatchLens
         </div>
         {/* Right spacer */}
         <div style={{ marginLeft: 'auto' }} />

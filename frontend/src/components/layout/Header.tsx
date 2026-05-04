@@ -34,9 +34,9 @@ export default function Header({ columns, onColumnsChange }: HeaderProps): JSX.E
           className="flex items-center gap-1"
           onClick={handleLogoClick}
         >
-          <img src="/icon.svg" alt="VidRecLab" className="w-8 h-8" />
+          <img src="/icon.svg" alt="WatchLens" className="w-8 h-8" />
           <span className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:inline">
-            VidRecLab
+            WatchLens
           </span>
         </a>
       </div>

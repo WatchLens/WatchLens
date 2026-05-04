@@ -62,20 +62,21 @@ function TikTokCard({ video }: { video: Video }): JSX.Element {
             }}
           />
         )}
-        {/* Caption overlay (bottom) */}
-        {video.title && (
-          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-            <div className="text-white text-xs font-medium line-clamp-2">
+        {/* Bottom overlay: caption (line-clamped) above the play count
+            badge. Both share the same gradient so they read as a single
+            unit and never overlap. */}
+        <div className="absolute bottom-0 left-0 right-0 px-2 pt-6 pb-1.5 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col gap-1">
+          {video.title && (
+            <div className="text-white text-xs font-medium line-clamp-2 leading-snug">
               {video.title}
             </div>
+          )}
+          <div className="flex items-center gap-1 text-white/90 text-[11px]">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {formatCount(video.view_count)}
           </div>
-        )}
-        {/* Play count badge (bottom-left small) */}
-        <div className="absolute bottom-1 left-1 flex items-center gap-1 text-white text-[11px]">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          {formatCount(video.view_count)}
         </div>
       </div>
 

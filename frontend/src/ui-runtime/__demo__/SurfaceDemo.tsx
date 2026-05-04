@@ -26,7 +26,7 @@ export function SurfaceDemoFeed(): JSX.Element {
   return (
     <FeedSurface videos={videos}>
       <header style={{ padding: 16, borderBottom: '1px solid #e5e7eb' }}>
-        <strong>VidRecLab — Surface demo (Phase 1 verification)</strong>
+        <strong>WatchLens — Surface demo (Phase 1 verification)</strong>
         <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
           user: {user.login_id} · {videos.length} videos · scroll, hover, click to fire events
         </div>

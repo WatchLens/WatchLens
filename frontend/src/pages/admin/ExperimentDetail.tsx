@@ -412,6 +412,56 @@ function formatAlgorithmConfig(algorithmConfig: AlgorithmConfig | null | undefin
   return `F:${feed} / W:${watch}`
 }
 
+// Format seconds → "12s" / "3m 4s" / "1h 5m". Used for watch time and
+// session duration cells; both come from the backend in seconds.
+function formatSeconds(seconds: number | null | undefined): string {
+  const s = Math.max(0, Math.round(seconds ?? 0))
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  const rs = s % 60
+  if (m < 60) return rs > 0 ? `${m}m ${rs}s` : `${m}m`
+  const h = Math.floor(m / 60)
+  const rm = m % 60
+  return rm > 0 ? `${h}h ${rm}m` : `${h}h`
+}
+
+// Collapsible card with a header that toggles visibility of children.
+// Local state — no persistence; defaults to expanded.
+function CollapsibleCard({
+  title,
+  children,
+  defaultOpen = true,
+  bodyClassName = 'p-6',
+}: {
+  title: string
+  children: React.ReactNode
+  defaultOpen?: boolean
+  bodyClassName?: string
+}): JSX.Element {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 text-left"
+      >
+        <h4 className="font-medium">{title}</h4>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <div className={bodyClassName}>{children}</div>}
+    </div>
+  )
+}
+
 import RecBoleTab from './RecBoleTab'
 import UserStatusModal from '@/components/admin/UserStatusModal'
 
@@ -1229,20 +1279,20 @@ export default function ExperimentDetail(): JSX.Element {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h4 className="font-medium mb-4">Events by Type</h4>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  {Object.entries(stats.event_counts).map(([type, count]) => (
-                    <div key={type} className="text-center">
-                      <div className="text-2xl font-bold">{count}</div>
-                      <div className="text-gray-500 text-xs">{type}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="mb-6">
+                <CollapsibleCard title="Events by Type">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    {Object.entries(stats.event_counts).map(([type, count]) => (
+                      <div key={type} className="text-center">
+                        <div className="text-2xl font-bold">{count}</div>
+                        <div className="text-gray-500 text-xs">{type}</div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleCard>
               </div>
 
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <h4 className="font-medium px-6 py-4 border-b">Group Comparison</h4>
+              <CollapsibleCard title="Group Comparison" bodyClassName="">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -1289,26 +1339,34 @@ export default function ExperimentDetail(): JSX.Element {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </CollapsibleCard>
 
               {/* Recommendation Evaluation */}
               {evaluation && (
-                <div className="bg-white rounded-lg shadow p-6 mt-6">
-                  <h4 className="font-medium mb-4">Recommendation Evaluation</h4>
+                <div className="mt-6">
+                  <CollapsibleCard title="Recommendation Evaluation">
 
                   {/* Overall Metric Cards */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-5 gap-4 mb-6">
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold">{(evaluation.overall.ctr * 100).toFixed(1)}%</div>
                       <div className="text-gray-500 text-xs mt-1">CTR</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold">{(evaluation.overall.avg_watch_ratio * 100).toFixed(1)}%</div>
-                      <div className="text-gray-500 text-xs mt-1">Watch Ratio</div>
+                      <div className="text-2xl font-bold">{formatSeconds(evaluation.overall.avg_watch_time_seconds as number)}</div>
+                      <div className="text-gray-500 text-xs mt-1">Avg Watch Time</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold">{(evaluation.overall.engagement_rate * 100).toFixed(1)}%</div>
-                      <div className="text-gray-500 text-xs mt-1">Engagement</div>
+                      <div className="text-2xl font-bold">{((evaluation.overall.watch_ratio_median as number) * 100).toFixed(0)}%</div>
+                      <div className="text-gray-500 text-xs mt-1">Watch Ratio (median)</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold">{(evaluation.overall.session_length_median as number).toFixed(1)}</div>
+                      <div className="text-gray-500 text-xs mt-1">Session Length (med videos)</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold">{formatSeconds(evaluation.overall.session_duration_median_seconds as number)}</div>
+                      <div className="text-gray-500 text-xs mt-1">Session Duration (median)</div>
                     </div>
                   </div>
 
@@ -1321,10 +1379,11 @@ export default function ExperimentDetail(): JSX.Element {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Algorithm</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">CTR</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Watch</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Engage</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Watch Time</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ratio (med)</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Length (med)</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Duration (med)</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Impr.</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Clicks</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sessions</th>
                           </tr>
                         </thead>
@@ -1339,13 +1398,18 @@ export default function ExperimentDetail(): JSX.Element {
                                 {((group.ctr as number) * 100).toFixed(1)}%
                               </td>
                               <td className="px-4 py-3 text-right text-sm">
-                                {((group.avg_watch_ratio as number) * 100).toFixed(1)}%
+                                {formatSeconds(group.avg_watch_time_seconds as number)}
                               </td>
-                              <td className={`px-4 py-3 text-right text-sm ${(group.sessions_evaluated as number) < 30 ? 'text-gray-400' : ''}`}>
-                                {((group.engagement_rate as number) * 100).toFixed(1)}%
+                              <td className="px-4 py-3 text-right text-sm">
+                                {((group.watch_ratio_median as number) * 100).toFixed(0)}%
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm">
+                                {(group.session_length_median as number).toFixed(1)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm">
+                                {formatSeconds(group.session_duration_median_seconds as number)}
                               </td>
                               <td className="px-4 py-3 text-right text-sm text-gray-500">{group.total_impressions as number}</td>
-                              <td className="px-4 py-3 text-right text-sm text-gray-500">{group.total_clicks as number}</td>
                               <td className="px-4 py-3 text-right text-sm text-gray-500">{group.sessions_evaluated as number}</td>
                             </tr>
                           ))}
@@ -1359,6 +1423,7 @@ export default function ExperimentDetail(): JSX.Element {
                       Low confidence: fewer than 30 sessions evaluated.
                     </p>
                   )}
+                  </CollapsibleCard>
                 </div>
               )}
 

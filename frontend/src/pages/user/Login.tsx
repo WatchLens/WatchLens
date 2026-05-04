@@ -51,7 +51,7 @@ export default function Login(): JSX.Element | null {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-3xl font-bold text-white">
-            VidRecLab
+            WatchLens
           </h1>
           <p className="mt-2 text-center text-gray-400">
             Video Recommendation Research Platform
