@@ -40,8 +40,8 @@ schema.
 ## Quick start (local)
 
 ```bash
-git clone https://github.com/legenduck/VidRecLab.git
-cd VidRecLab
+git clone https://github.com/WatchLens/WatchLens.git
+cd WatchLens
 cp .env.example .env       # set POSTGRES_PASSWORD, SECRET_KEY, ADMIN_PASSWORD
 docker compose up -d --build
 ```
