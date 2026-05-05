@@ -16,6 +16,10 @@ class UITemplate(Base):
     # 'tree' = visual block-tree authoring (feed_config / watch_config / *_css)
     # 'code' = raw TSX source authored in editor, compiled in browser at runtime
     template_type = Column(String(20), nullable=False, default="tree")
+    # Target device for this template. Each template covers exactly one
+    # device — no multi-viewport responsive rendering. Group `ui_config`
+    # routes per (surface, device) to a matching template.
+    device = Column(String(20), nullable=False, default="desktop")  # 'desktop' | 'tablet' | 'mobile'
     feed_config = Column(JSONB, nullable=False, default=dict)
     watch_config = Column(JSONB, nullable=False, default=dict)
     feed_css = Column(Text, nullable=False, default="")

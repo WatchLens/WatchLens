@@ -6,16 +6,22 @@
  *                                              template, dispatched by
  *                                              template_type
  *
+ * Like Feed, the dispatcher first checks viewport against the group's
+ * assigned device. A mismatch returns the notice page rather than
+ * scaling the UI.
+ *
  * `'none'` is intentionally not a valid watch key — the watch page
  * always needs a renderer. The schema validator on the backend
- * rejects `ui_config.watch = 'none'` at group save time.
+ * rejects watch keys set to `'none'`.
  */
 import { useUser } from '@/ui-runtime/data'
 import { useCustomTemplate } from '@/hooks/useCustomTemplate'
+import { useDevice } from '@/hooks/useDevice'
 import CompiledUI from '@/ui-runtime/CompiledUI'
 import { BlockTreeRenderer } from '@/ui-runtime/blocks'
 import Header from '@/components/layout/Header'
 import { WATCH_PRESETS, isBuiltinWatchKey } from '@/ui-presets/registry'
+import DeviceMismatchNotice from './DeviceMismatchNotice'
 
 
 function LoadingScreen(): JSX.Element {
@@ -60,6 +66,7 @@ function TemplateWatch({ templateId }: { templateId: string }): JSX.Element {
 
 export default function VideoWatch(): JSX.Element {
   const user = useUser()
+  const detectedDevice = useDevice()
 
   if (user.isLoading) return <LoadingScreen />
 
@@ -72,10 +79,24 @@ export default function VideoWatch(): JSX.Element {
     )
   }
 
-  if (isBuiltinWatchKey(ui.watch)) {
-    const { Component } = WATCH_PRESETS[ui.watch]
+  const expected = user.device
+  if (expected && expected !== detectedDevice) {
+    return <DeviceMismatchNotice detected={detectedDevice} expected={expected} />
+  }
+
+  const key = ui.watch
+  if (!key) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        No watch UI configured for this group.
+      </div>
+    )
+  }
+
+  if (isBuiltinWatchKey(key)) {
+    const { Component } = WATCH_PRESETS[key]
     return <Component />
   }
 
-  return <TemplateWatch templateId={ui.watch} />
+  return <TemplateWatch templateId={key} />
 }

@@ -27,6 +27,9 @@ function StackBlock({ node, renderChildren }: BlockRenderProps): JSX.Element {
   const gap = p<string>(node, 'gap', '8px')
   const align = p<string>(node, 'align', 'stretch')
   const justify = p<string>(node, 'justify', 'start')
+  const background = p<string>(node, 'background', '')
+  const padding = p<string>(node, 'padding', '')
+  const borderRadius = p<string>(node, 'borderRadius', '')
 
   const style: CSSProperties = {
     display: 'flex',
@@ -35,6 +38,9 @@ function StackBlock({ node, renderChildren }: BlockRenderProps): JSX.Element {
     alignItems: ALIGN_MAP[align] ?? align,
     justifyContent: JUSTIFY_MAP[justify] ?? justify,
     minWidth: 0,
+    ...(background ? { background } : {}),
+    ...(padding ? { padding } : {}),
+    ...(borderRadius ? { borderRadius } : {}),
   }
 
   return <div style={style}>{renderChildren()}</div>
@@ -45,11 +51,14 @@ export const StackSpec: BlockSpec = {
   category: 'container',
   acceptsChildren: true,
   description: 'Vertical group. Children stack top-to-bottom with a gap. For side-by-side layouts use Grid instead.',
-  defaultProps: { gap: '8px', align: 'stretch', justify: 'start' },
+  defaultProps: { gap: '8px', align: 'stretch', justify: 'start', background: '', padding: '', borderRadius: '' },
   propSchema: [
     { key: 'gap', label: 'Gap', type: 'size', unit: 'px' },
     { key: 'align', label: 'Align', type: 'alignment' },
     { key: 'justify', label: 'Justify', type: 'select', options: ['start', 'center', 'end', 'space-between', 'space-around'] },
+    { key: 'background', label: 'Background', type: 'color' },
+    { key: 'padding', label: 'Padding', type: 'spacing-shorthand', unit: 'px' },
+    { key: 'borderRadius', label: 'Radius', type: 'size', unit: 'px' },
   ],
   Component: StackBlock,
 }

@@ -53,3 +53,7 @@ cookies.txt
 # Data folder - ignore contents but keep folder
 data/*
 !data/.gitkeep
+
+# Claude Code instructions / mem-context (local only)
+CLAUDE.md
+**/CLAUDE.md

@@ -11,6 +11,7 @@ from ....schemas.user_group import (
     UserGroupCreate,
     UserGroupUpdate,
     UserGroupResponse,
+    _validate_ui_key,
 )
 
 
@@ -22,6 +23,7 @@ def _to_response(g: UserGroup, user_count: int) -> UserGroupResponse:
         id=g.id,
         experiment_id=g.experiment_id,
         name=g.name,
+        device=g.device,
         algorithm_config=g.algorithm_config,
         ui_config=g.ui_config,
         config=g.config,
@@ -62,11 +64,12 @@ def create_user_group(
         )
 
     algo_config = data.algorithm_config.model_dump() if data.algorithm_config else {"feed": "random", "watch": "random"}
-    ui_config = data.ui_config.model_dump() if data.ui_config else {"feed": "youtube", "watch": "youtube"}
+    ui_config = data.ui_config.model_dump() if data.ui_config else {"feed": "youtube-desktop", "watch": "youtube-desktop"}
 
     group = UserGroup(
         experiment_id=experiment_id,
         name=data.name,
+        device=data.device,
         algorithm_config=algo_config,
         ui_config=ui_config,
         config=data.config or {},
@@ -97,16 +100,38 @@ def update_user_group(
         )
     if experiment.status == "active":
         # Active experiments: algorithm_config + config are editable so researchers can
-        # iterate on recommendations mid-study. ui_config remains locked to avoid
-        # layout-driven confounds in participant behavior.
+        # iterate on recommendations mid-study. ui_config + device remain locked to
+        # avoid layout-driven confounds in participant behavior.
         if data.ui_config is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot change UI config in active experiment",
             )
+        if data.device is not None and data.device != group.device:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot change device in active experiment",
+            )
+
+    # Validate ui_config against the group's effective device. The
+    # patch's `device` (if present) wins over the existing one — both
+    # `device` and `ui_config` may change in the same call, and the
+    # check has to use the post-patch device for correctness.
+    effective_device = data.device or group.device
+    if data.ui_config is not None:
+        _validate_ui_key("feed", data.ui_config.feed, effective_device)
+        _validate_ui_key("watch", data.ui_config.watch, effective_device)
+    elif data.device is not None and data.device != group.device:
+        # Device changed but ui_config didn't — re-validate the existing
+        # ui_config against the new device. Catches the "switched mobile
+        # → desktop without re-picking templates" foot-gun.
+        _validate_ui_key("feed", group.ui_config.get("feed", ""), effective_device)
+        _validate_ui_key("watch", group.ui_config.get("watch", ""), effective_device)
 
     if data.name is not None:
         group.name = data.name
+    if data.device is not None:
+        group.device = data.device
     if data.algorithm_config is not None:
         group.algorithm_config = data.algorithm_config.model_dump()
     if data.ui_config is not None:

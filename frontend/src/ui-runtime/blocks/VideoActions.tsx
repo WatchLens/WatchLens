@@ -35,31 +35,49 @@ function VideoActionsBlock({ node, env }: BlockRenderProps): JSX.Element | null 
 
   const showLike = p<boolean>(node, 'showLike', true)
   const showDislike = p<boolean>(node, 'showDislike', true)
+  const background = p<string>(node, 'background', '')
+  const color = p<string>(node, 'color', '')
+  const activeColor = p<string>(node, 'activeColor', '')
+
+  // Inline style applies color to text + currentColor-bound SVG icon.
+  // Active state takes `activeColor` (default: Tailwind blue accent);
+  // inactive takes `color` (default: Tailwind gray-700).
+  const likeStyle = likes.isLiked
+    ? activeColor ? { color: activeColor } : undefined
+    : color ? { color } : undefined
+  const dislikeStyle = likes.isDisliked
+    ? activeColor ? { color: activeColor } : undefined
+    : color ? { color } : undefined
 
   return (
-    <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full">
+    <div
+      className="flex items-center bg-gray-100 rounded-full"
+      style={background ? { background } : undefined}
+    >
       {showLike && (
         <button
           onClick={likes.like}
           className={`flex items-center gap-2 px-4 py-2 rounded-l-full transition-colors ${
             likes.isLiked
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              ? 'text-blue-600'
+              : 'text-gray-700 hover:bg-gray-200'
           }`}
+          style={likeStyle}
         >
           <HeartIcon filled={likes.isLiked} />
           <span className="text-sm font-medium">{likes.count}</span>
         </button>
       )}
-      {showLike && showDislike && <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />}
+      {showLike && showDislike && <div className="w-px h-6 bg-gray-300" />}
       {showDislike && (
         <button
           onClick={likes.dislike}
           className={`flex items-center gap-2 px-4 py-2 rounded-r-full transition-colors ${
             likes.isDisliked
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              ? 'text-blue-600'
+              : 'text-gray-700 hover:bg-gray-200'
           }`}
+          style={dislikeStyle}
         >
           <HeartIcon filled={likes.isDisliked} rotated />
         </button>
@@ -72,10 +90,13 @@ export const VideoActionsSpec: BlockSpec = {
   type: 'VideoActions',
   category: 'data-bound',
   description: 'Interactive Like / Dislike buttons. Emits LIKE / DISLIKE events.',
-  defaultProps: { showLike: true, showDislike: true },
+  defaultProps: { showLike: true, showDislike: true, background: '', color: '', activeColor: '' },
   propSchema: [
     { key: 'showLike', label: 'Like', type: 'toggle' },
     { key: 'showDislike', label: 'Dislike', type: 'toggle' },
+    { key: 'background', label: 'Background', type: 'color' },
+    { key: 'color', label: 'Text Color', type: 'color' },
+    { key: 'activeColor', label: 'Active Color', type: 'color' },
   ],
   Component: VideoActionsBlock,
 }

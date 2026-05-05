@@ -10,13 +10,16 @@ class Event(Base):
     """
     Wide Table + JSONB pattern for flexible event logging.
 
-    Event types:
-    - VIDEO_START: User started watching a video
-    - VIDEO_END: User stopped watching (includes watch_ratio)
-    - LIKE: User liked a video
-    - DISLIKE: User disliked a video
-    - FEED_CLICK: User clicked a video from feed
-    - IMPRESSION: Videos shown to user in feed
+    The full 33-event contract lives in `docs/event-schema.md`; this
+    docstring just lists the most-queried types so a backend reader
+    knows what to expect when joining on `event_type`:
+
+    - VIDEO_PLAY: Per-play start (autoplay-on-page-load included)
+    - VIDEO_ENDED: Natural end + unmount-mid-play synthetic (carries watch_ratio)
+    - VIDEO_WATCHED_1S / VIDEO_WATCHED_5S: Once-per-play watched-threshold fires
+    - LIKE / DISLIKE: User toggle on the video
+    - FEED_CLICK: User clicked a video card from the feed
+    - IMPRESSION: A video card was >=50% visible (once per mount)
     """
     __tablename__ = "events"
 
@@ -28,7 +31,7 @@ class Event(Base):
     event_type = Column(String(50), nullable=False)
 
     # Common structured fields for efficient querying
-    watch_ratio = Column(Float, nullable=True)  # For VIDEO_END events
+    watch_ratio = Column(Float, nullable=True)  # For VIDEO_ENDED / VIDEO_WATCHED_* events
     watch_duration = Column(Float, nullable=True)  # Seconds watched
     position_in_feed = Column(Integer, nullable=True)  # For IMPRESSION, FEED_CLICK
     algorithm = Column(String(50), nullable=True)  # Which recommender was used

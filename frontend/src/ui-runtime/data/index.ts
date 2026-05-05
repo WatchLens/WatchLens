@@ -6,7 +6,7 @@
  * paper's measurement contract because some hooks emit events as a side
  * effect (LIKE, DISLIKE) and bypassing them silently drops those events.
  *
- * Code track imports as `@vidreclab/data` (rewritten by the in-browser
+ * Code track imports as `@watchlens/data` (rewritten by the in-browser
  * compiler at runtime); the bundled UI presets import from this path.
  */
 
@@ -35,3 +35,6 @@ export type { UseUserResult } from './useUser'
 
 export { useTracking } from './useTracking'
 export type { UseTrackingResult } from './useTracking'
+
+export { MockDataContext, MockDataProvider, useMockData } from './mockContext'
+export type { MockData } from './mockContext'

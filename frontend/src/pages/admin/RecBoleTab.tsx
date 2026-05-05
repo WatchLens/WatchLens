@@ -368,9 +368,8 @@ export default function RecBoleTab({ experimentId, groups }: RecBoleTabProps): J
               <div className="space-y-1.5">
                 {[
                   { key: 'cf', label: 'Stage 1: CF (RecBole)', color: 'bg-green-500' },
-                  { key: 'i2i_history', label: 'Stage 2: I2I History', color: 'bg-blue-500' },
-                  { key: 'popularity', label: 'Stage 3: Popularity', color: 'bg-yellow-500' },
-                  { key: 'recency', label: 'Stage 4: Recency', color: 'bg-gray-400' },
+                  { key: 'popularity', label: 'Stage 2: Popularity', color: 'bg-yellow-500' },
+                  { key: 'recency', label: 'Stage 3: Recency', color: 'bg-gray-400' },
                 ].map(({ key, label, color }) => (
                   <div key={key} className="flex items-center gap-2 text-sm">
                     <div className="w-32 text-gray-500 text-xs">{label}</div>
@@ -395,8 +394,7 @@ export default function RecBoleTab({ experimentId, groups }: RecBoleTabProps): J
               <div className="space-y-1.5">
                 {[
                   { key: 'i2i', label: 'Stage 1: I2I (RecBole)', color: 'bg-green-500' },
-                  { key: 'same_category', label: 'Stage 2: Same Category', color: 'bg-blue-500' },
-                  { key: 'popularity', label: 'Stage 3: Popularity', color: 'bg-yellow-500' },
+                  { key: 'popularity', label: 'Stage 2: Popularity', color: 'bg-yellow-500' },
                 ].map(({ key, label, color }) => (
                   <div key={key} className="flex items-center gap-2 text-sm">
                     <div className="w-32 text-gray-500 text-xs">{label}</div>

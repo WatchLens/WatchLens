@@ -1,6 +1,6 @@
 # Adding a UI
 
-VidRecLab supports three entry points for authoring a UI. They share
+WatchLens supports three entry points for authoring a UI. They share
 the same data hooks and surface primitives — the choice is about
 where the source of truth lives and how it gets compiled.
 
@@ -12,6 +12,18 @@ where the source of truth lives and how it gets compiled.
 
 The first three quarters of this guide cover the **Code preset** flow.
 The last two sections cover the in-browser flows.
+
+> **Per-device routing.** Every user group is bound to one device
+> class (`'desktop' | 'tablet' | 'mobile'`), and `ui_config` is flat
+> (`{feed: <key>, watch: <key>}`). Built-in presets ship per-device
+> variants — `youtube-{desktop,tablet,mobile}`, `tiktok-{desktop,tablet,
+> mobile}`, plus the device-agnostic `'none'`. Each value must be a
+> built-in whose device list includes the group's device, or a
+> published `ui_templates.id` UUID whose `device` matches. A
+> participant whose viewport doesn't match the group's device sees a
+> forced mismatch notice rather than a scaled-down UI. See
+> [`device-routing.md`](./device-routing.md) for the full data model
+> and editor flow.
 
 ## Architecture in one diagram
 
@@ -27,7 +39,7 @@ The last two sections cover the in-browser flows.
    └──────────────────────┬──────────────────────────────────-┘
                           │
                           ▼
-   ┌─── Preset (e.g. ui-presets/youtube/feed.tsx) ───────────┐
+   ┌─── Preset (e.g. ui-presets/youtube-desktop/feed.tsx) ──┐
    │                                                          │
    │   const { videos } = useFeed()           ← data          │
    │   return (                                               │
@@ -51,8 +63,12 @@ event-schema events are all handled by the layers below.
 ### 1. Decide the preset key
 
 The key is the string that goes in `user_group.ui_config.feed` /
-`.watch` for groups assigned to your preset. Keep it short and
-lowercase: `youtube`, `tiktok`, `shorts`, `custom`, `<your-key>`.
+`.watch` for groups assigned to your preset. Built-ins follow the
+convention `<preset>-<device>` so each preset/device combination
+gets a first-class key (e.g. `youtube-desktop`, `tiktok-mobile`).
+Keep additions short and lowercase. Backend `BUILTIN_FEED_KEYS` /
+`BUILTIN_WATCH_KEYS` (`schemas/user_group.py`) plus frontend
+`BUILTIN_UIS` (`ui-presets/registry.ts`) need matching entries.
 
 ### 2. Create the preset folder and components
 
@@ -220,7 +236,8 @@ These are not part of the contract; they're convenient building blocks:
 - `@/components/video/VideoPlayer` — `<video>`-based player with native
   playback events. Pair with `<VideoSurface context="watch">`.
 - `@/components/video/VideoCard` — thumbnail + title + meta layout used
-  by youtube, tiktok, shorts presets. Reuse or roll your own.
+  by `youtube-desktop` and the legacy 9:16 grid presets. Reuse or roll
+  your own.
 - `@/components/video/CommentSection` — toggleable comment thread; reads
   via `useComments` / `useReplies` internally.
 
@@ -256,8 +273,9 @@ known gap.
 ### Manual emits
 
 `LAYOUT_CHANGE` is emitted only via `useTracking()` — surfaces don't
-know when an in-page layout switch is "user intent". The youtube preset
-demonstrates this when its column count changes.
+know when an in-page layout switch is "user intent". No bundled preset
+emits it today; the schema entry is reserved for code-track presets
+that expose a column-count toggle or similar in-page layout control.
 
 ## Testing your preset
 
@@ -280,21 +298,30 @@ threshold for a single-user walkthrough.
 
 ## Reference presets
 
-The four bundled presets in `frontend/src/ui-presets/`:
+The bundled presets in `frontend/src/ui-presets/` (one directory per
+device variant):
 
-- `youtube/` — 4–8 column 16:9 grid + aspect-video player + sidebar
-- `tiktok/` — 9:16 grid + full-screen vertical pager (legacy
-  `<TikTokFeed>` reused; surface wraps page-level only)
-- `shorts/` — 9:16 grid + split-screen player + recommendations panel
-  (legacy `<ShortsWatch>` reused with the same caveat)
-- `custom/` — dispatcher that routes a user's `ui_config.template_id`
-  to either an in-browser Code editor template (`code_text` →
-  `<CompiledUI>`) or a Visual editor block tree (`feed_tree` /
-  `watch_tree` → `<BlockTreeRenderer>`)
+- `youtube-desktop/` — 4-column 16:9 grid + aspect-video player +
+  400px sidebar. Hand-written React with infinite scroll, timeAgo,
+  hover scale. Cleanest reference for the React-first preset flow.
+- `youtube-tablet/`, `youtube-mobile/` — thin
+  `<BlockTreeRenderer page="..." tree={getDefault*Tree('<device>')} />`
+  wrappers. Defer layout to the editor's default tree, so any visual
+  edits to that tree's shape automatically reach the wrapper preset.
+- `tiktok-desktop/` — split-screen 9:16 watch with right-rail meta /
+  comments / related; full React.
+- `tiktok-mobile/` — full-screen 9:16 vertical pager with right action
+  stack and bottom-sheet comments; full React.
+- `tiktok-tablet/` — `<BlockTreeRenderer>` wrapper (same pattern as
+  the YouTube tablet/mobile wrappers).
 
-The first is the cleanest reference for the preset flow; `tiktok` and
-`shorts` demonstrate "wrap a legacy component" patterns; `custom/` is
-the dispatcher for the two admin-authored tracks.
+Built-in dispatch lives in `pages/user/Feed.tsx` /
+`pages/user/VideoWatch.tsx`: `isBuiltinFeedKey(key)` →
+`FEED_PRESETS[key].Component` for any of the keys above; otherwise the
+dispatcher hands the UUID to `<TemplateFeed>` /
+`<TemplateWatch>` for admin-authored templates. There is no separate
+`custom/` preset — it was retired when `ui_config` collapsed to flat
+keys (alembic 019).
 
 ## Admin Code editor (in-browser TSX)
 
@@ -304,8 +331,8 @@ exported component, switch the editor's preview pane, see it run live.
 
 ```tsx
 // pasted into the admin Code editor
-import { useFeed } from '@vidreclab/data'
-import { FeedSurface, VideoSurface } from '@vidreclab/surfaces'
+import { useFeed } from '@watchlens/data'
+import { FeedSurface, VideoSurface } from '@watchlens/surfaces'
 
 export default function MyCustomFeed(): JSX.Element {
   const { videos, isLoading } = useFeed({ limit: 12 })
@@ -331,11 +358,11 @@ Resolved imports (compile-time rewritten by `frontend/src/ui-runtime/compile.ts`
 
 | Import | Resolves to |
 |--------|-------------|
-| `'@vidreclab/data'` | `window.__vidreclab__.data` (the data hooks) |
-| `'@vidreclab/surfaces'` | `window.__vidreclab__.surfaces` |
-| `'@vidreclab/blocks'` | `window.__vidreclab__.blocks` (block runtime + `BlockTreeRenderer`) |
-| `'@vidreclab/runtime'` | `window.__vidreclab__` (everything) |
-| `'react'` | `window.__vidreclab__.React` |
+| `'@watchlens/data'` | `window.__watchlens__.data` (the data hooks) |
+| `'@watchlens/surfaces'` | `window.__watchlens__.surfaces` |
+| `'@watchlens/blocks'` | `window.__watchlens__.blocks` (block runtime + `BlockTreeRenderer`) |
+| `'@watchlens/runtime'` | `window.__watchlens__` (everything) |
+| `'react'` | `window.__watchlens__.React` |
 
 Anything else throws at compile time so the missing import is visible
 in the editor before it can break a participant session.
@@ -371,8 +398,8 @@ The editor's right panel shows the live-generated TSX (read-only) for
 the current trees:
 
 ```tsx
-import { BlockTreeRenderer } from '@vidreclab/blocks'
-import type { BlockNode } from '@vidreclab/blocks'
+import { BlockTreeRenderer } from '@watchlens/blocks'
+import type { BlockNode } from '@watchlens/blocks'
 
 const FEED_TREE: BlockNode = { /* full feed tree literal */ }
 const WATCH_TREE: BlockNode = { /* full watch tree literal */ }

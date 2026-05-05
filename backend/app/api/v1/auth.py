@@ -30,12 +30,14 @@ def login(
     token = create_access_token(str(user.id), user.is_admin)
     set_auth_cookie(response, token)
 
-    # Get algorithm_config and ui_config from user's group
+    # Get algorithm_config, ui_config, and device from user's group
     algorithm_config = None
     ui_config = None
+    device = None
     if user.user_group:
         algorithm_config = user.user_group.algorithm_config
         ui_config = user.user_group.ui_config
+        device = user.user_group.device
 
     return LoginResponse(
         user=UserResponse(
@@ -43,6 +45,7 @@ def login(
             login_id=user.login_id,
             is_admin=user.is_admin,
             user_group_id=user.user_group_id,
+            device=device,
             algorithm_config=algorithm_config,
             ui_config=ui_config,
         )
@@ -61,15 +64,18 @@ def get_me(current_user: User = Depends(get_current_user)):
     """Get current user info."""
     algorithm_config = None
     ui_config = None
+    device = None
     if current_user.user_group:
         algorithm_config = current_user.user_group.algorithm_config
         ui_config = current_user.user_group.ui_config
+        device = current_user.user_group.device
 
     return UserResponse(
         id=current_user.id,
         login_id=current_user.login_id,
         is_admin=current_user.is_admin,
         user_group_id=current_user.user_group_id,
+        device=device,
         algorithm_config=algorithm_config,
         ui_config=ui_config,
     )

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getRelatedVideos } from '@/api/videos'
 import type { RelatedVideosResponse, Video } from '@/types'
+import { useMockData } from './mockContext'
 
 const DEFAULT_LIMIT = 12
 
@@ -20,12 +21,22 @@ export function useRelated(
   opts: UseRelatedOptions = {},
 ): UseRelatedResult {
   const limit = opts.limit ?? DEFAULT_LIMIT
+  const mock = useMockData()
 
   const query = useQuery<RelatedVideosResponse>({
     queryKey: ['relatedVideos', videoId, limit],
     queryFn: () => getRelatedVideos(videoId!, limit),
-    enabled: !!videoId,
+    enabled: !!videoId && mock === null,
   })
+
+  if (mock !== null) {
+    return {
+      videos: mock.related.slice(0, limit),
+      algorithm: 'mock',
+      isLoading: false,
+      error: null,
+    }
+  }
 
   return {
     videos: query.data?.videos ?? [],

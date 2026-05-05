@@ -9,6 +9,7 @@ from .ui_templates import router as ui_templates_router
 from .training import router as training_router
 from .datasets import router as datasets_router
 from .recommenders import router as recommenders_router
+from .surveys import router as surveys_router
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -21,3 +22,4 @@ admin_router.include_router(ui_templates_router)
 admin_router.include_router(training_router)
 admin_router.include_router(datasets_router)
 admin_router.include_router(recommenders_router)
+admin_router.include_router(surveys_router)

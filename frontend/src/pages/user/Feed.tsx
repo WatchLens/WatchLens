@@ -1,6 +1,6 @@
 /**
- * Feed page dispatcher. Reads the user's `ui_config.feed` and decides
- * which UI to render:
+ * Feed page dispatcher. Reads the user's `ui_config.feed` (a flat key)
+ * and renders the matching UI:
  *
  *   built-in keys (`'youtube'`, `'tiktok'`)  → React preset component
  *   `'none'`                                  → redirect to first watch
@@ -10,16 +10,24 @@
  *                                                template, dispatched by
  *                                                template_type
  *
+ * Before any of that, the dispatcher checks the participant's actual
+ * viewport against their group's assigned `device`. A mismatch
+ * (e.g. mobile viewport but group is `desktop`) returns the mismatch
+ * notice — silently scaling a 1280px-authored UI down would change
+ * the experimental treatment.
+ *
  * The dispatcher itself owns no UI; tracking comes from each preset's
  * (or template's) own surface primitives.
  */
 import { Navigate } from 'react-router-dom'
 import { useFeed, useUser } from '@/ui-runtime/data'
 import { useCustomTemplate } from '@/hooks/useCustomTemplate'
+import { useDevice } from '@/hooks/useDevice'
 import CompiledUI from '@/ui-runtime/CompiledUI'
 import { BlockTreeRenderer } from '@/ui-runtime/blocks'
 import Header from '@/components/layout/Header'
 import { FEED_PRESETS, isBuiltinFeedKey } from '@/ui-presets/registry'
+import DeviceMismatchNotice from './DeviceMismatchNotice'
 
 
 function LoadingScreen(): JSX.Element {
@@ -32,9 +40,7 @@ function LoadingScreen(): JSX.Element {
 
 
 /** `feed: 'none'` flow — fetch one recommendation and forward the
- *  user to its watch URL on mount. The first request emits the same
- *  HOME_FEED / IMPRESSION events as a normal feed mount; only the
- *  visual feed surface is skipped. */
+ *  user to its watch URL on mount. */
 function FeedNoneRedirect(): JSX.Element {
   const { videos, isLoading } = useFeed({ limit: 1 })
   if (isLoading) return <LoadingScreen />
@@ -49,12 +55,7 @@ function FeedNoneRedirect(): JSX.Element {
 }
 
 
-/** Admin-authored UI template renderer. Resolves the row by id, then
- *  picks the renderer based on `template_type`:
- *    - `'code'` → in-browser sucrase compile via <CompiledUI>
- *    - `'tree'` → block tree walked by <BlockTreeRenderer>
- *  Header (platform chrome) sits outside the template's authoring
- *  surface. */
+/** Admin-authored UI template renderer. */
 function TemplateFeed({ templateId }: { templateId: string }): JSX.Element {
   const { data: template, isLoading } = useCustomTemplate(templateId)
   if (isLoading) return <LoadingScreen />
@@ -88,6 +89,7 @@ function TemplateFeed({ templateId }: { templateId: string }): JSX.Element {
 
 export default function Feed(): JSX.Element {
   const user = useUser()
+  const detectedDevice = useDevice()
 
   if (user.isLoading) return <LoadingScreen />
 
@@ -100,15 +102,31 @@ export default function Feed(): JSX.Element {
     )
   }
 
-  if (ui.feed === 'none') {
+  // Device mismatch check. Group's device is the experimental treatment;
+  // viewport that doesn't match it gets blocked rather than rendering a
+  // scaled-down UI.
+  const expected = user.device
+  if (expected && expected !== detectedDevice) {
+    return <DeviceMismatchNotice detected={detectedDevice} expected={expected} />
+  }
+
+  const key = ui.feed
+  if (!key) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        No feed UI configured for this group.
+      </div>
+    )
+  }
+
+  if (key === 'none') {
     return <FeedNoneRedirect />
   }
 
-  if (isBuiltinFeedKey(ui.feed)) {
-    const { Component } = FEED_PRESETS[ui.feed]
+  if (isBuiltinFeedKey(key)) {
+    const { Component } = FEED_PRESETS[key]
     return <Component />
   }
 
-  // Treat any other key as a ui_templates.id UUID.
-  return <TemplateFeed templateId={ui.feed} />
+  return <TemplateFeed templateId={key} />
 }

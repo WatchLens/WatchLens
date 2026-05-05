@@ -3,7 +3,7 @@
  *
  * Phase 5: visual mode templates can be exported as a TSX file or
  * "ejected" into the code track. The generated source uses the public
- * `BlockTreeRenderer` from `@vidreclab/blocks`, with both the feed and
+ * `BlockTreeRenderer` from `@watchlens/blocks`, with both the feed and
  * watch trees inlined as typed `BlockNode` literals. Routing is handled
  * by reading `window.location.pathname` — feed dispatcher and watch
  * dispatcher each mount their own copy of the compiled component, so
@@ -73,8 +73,8 @@ export function blockTreeToTSX(
   const feedLiteral = stringifyTree(feedTree)
   const watchLiteral = stringifyTree(watchTree)
 
-  return `${header}import { BlockTreeRenderer } from '@vidreclab/blocks'
-import type { BlockNode } from '@vidreclab/blocks'
+  return `${header}import { BlockTreeRenderer } from '@watchlens/blocks'
+import type { BlockNode } from '@watchlens/blocks'
 
 const FEED_TREE: BlockNode = ${feedLiteral}
 

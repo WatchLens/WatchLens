@@ -1,13 +1,15 @@
 """
 Metadata-based Item-to-Item similarity calculator.
 
-Re-implements Gorse's autoItemToItem logic:
-  - Tags IDF: each item's tags array as a document
-  - Users IDF: each item's interacting users as a document
-  - Final distance = (tags_dist + users_dist) / 2
-  - Final score = 1 / (1 + distance)
+Computes lightweight item-to-item similarity from item metadata + a
+co-view signal — no model training, no embeddings, no GPU. Useful as
+the cold-start fallback for the watch-page recommender chain.
 
-Reference: gorse/logics/item_to_item.go:285-376, gorse/dataset/dataset.go:155-199
+Approach:
+  - Tags IDF: each item's tags array treated as a document
+  - Users IDF: each item's interacting users treated as a document
+  - Final distance = (tags_dist + users_dist) / 2
+  - Final score   = 1 / (1 + distance)
 """
 import logging
 import threading
@@ -34,7 +36,7 @@ def _get_experiment_lock(experiment_id: UUID) -> threading.Lock:
 
 
 def compute_idf(total_count: int, term_freq: Dict[str, int]) -> Dict[str, float]:
-    """Compute IDF weights for each term. Matches Gorse dataset.go:183-199."""
+    """Compute IDF weights for each term."""
     idf = {}
     for term, freq in term_freq.items():
         idf[term] = max(log(total_count / freq), 1e-3)
@@ -47,10 +49,7 @@ def idf_distance(
     idf: Dict[str, float],
     shrinkage: int = 100,
 ) -> float:
-    """
-    IDF-weighted distance between two term sets.
-    Matches Gorse logics/item_to_item.go:337-377.
-    """
+    """IDF-weighted distance between two term sets."""
     a_set = set(a_terms)
     b_set = set(b_terms)
     common = a_set & b_set

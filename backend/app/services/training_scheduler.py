@@ -1,11 +1,12 @@
 """
-Automatic training scheduler — re-implements Gorse's RunTasksLoop.
+Automatic training scheduler.
 
 Periodically checks active experiments and triggers:
 1. Auto I2I computation (metadata-based, no ML training needed)
 2. Per-group CF model training via RecBole
 
-Uses needUpdate pattern to avoid unnecessary retraining.
+Uses a "needs update" check (cache empty / expired / sufficient new
+interactions) to avoid unnecessary retraining.
 """
 import asyncio
 import logging
@@ -77,7 +78,7 @@ class TrainingScheduler:
             db.close()
 
     def _process_experiment(self, db: Session, experiment_id: uuid.UUID):
-        # Step 1: Auto I2I update (independent of CF, runs first like Gorse)
+        # Step 1: Auto I2I update (independent of CF, runs first)
         if self._needs_auto_i2i_update(db, experiment_id):
             logger.info("Auto I2I update needed for experiment %s", experiment_id)
             try:
@@ -158,7 +159,7 @@ class TrainingScheduler:
                     JOIN sessions s ON e.session_id = s.id
                     JOIN videos v ON e.video_id = v.id
                     WHERE v.experiment_id = :eid
-                      AND e.event_type IN ('VIDEO_START', 'LIKE', 'VIDEO_END')
+                      AND e.event_type IN ('VIDEO_WATCHED_1S', 'LIKE', 'VIDEO_ENDED')
                       AND e.video_id IS NOT NULL
                 """),
                 {"eid": str(experiment_id)},
@@ -177,7 +178,7 @@ class TrainingScheduler:
                 JOIN sessions s ON e.session_id = s.id
                 JOIN videos v ON e.video_id = v.id
                 WHERE v.experiment_id = :eid
-                  AND e.event_type IN ('VIDEO_START', 'LIKE', 'VIDEO_END')
+                  AND e.event_type IN ('VIDEO_WATCHED_1S', 'LIKE', 'VIDEO_ENDED')
                   AND e.video_id IS NOT NULL
                   AND e.server_timestamp > :since
             """),
@@ -206,7 +207,7 @@ class TrainingScheduler:
                     JOIN sessions s ON e.session_id = s.id
                     JOIN videos v ON e.video_id = v.id
                     WHERE v.experiment_id = :eid
-                      AND e.event_type IN ('VIDEO_START', 'LIKE', 'VIDEO_END')
+                      AND e.event_type IN ('VIDEO_WATCHED_1S', 'LIKE', 'VIDEO_ENDED')
                       AND e.video_id IS NOT NULL
                 """),
                 {"eid": str(experiment_id)},
@@ -223,7 +224,7 @@ class TrainingScheduler:
                 JOIN sessions s ON e.session_id = s.id
                 JOIN videos v ON e.video_id = v.id
                 WHERE v.experiment_id = :eid
-                  AND e.event_type IN ('VIDEO_START', 'LIKE', 'VIDEO_END')
+                  AND e.event_type IN ('VIDEO_WATCHED_1S', 'LIKE', 'VIDEO_ENDED')
                   AND e.video_id IS NOT NULL
                   AND e.server_timestamp > :since
             """),

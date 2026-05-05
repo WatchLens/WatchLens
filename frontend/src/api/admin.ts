@@ -208,8 +208,13 @@ export const downloadEventsCSV = (experimentId: number | string): void => {
 }
 
 // UI Templates
-export const getUITemplates = async (status?: string): Promise<UITemplateListItem[]> => {
-  const params = status ? { status } : {}
+export const getUITemplates = async (
+  status?: string,
+  device?: string,
+): Promise<UITemplateListItem[]> => {
+  const params: Record<string, string> = {}
+  if (status) params.status = status
+  if (device) params.device = device
   const response = await client.get<UITemplateListItem[]>('/admin/ui-templates', { params })
   return response.data
 }
@@ -321,4 +326,39 @@ import type { RecommenderInfo } from '@/types/experiment'
 export const getRecommenders = async (): Promise<RecommenderInfo[]> => {
   const response = await client.get<RecommenderInfo[]>('/admin/recommenders')
   return response.data
+}
+
+// ── Surveys ────────────────────────────────────────────────────────
+import type { Survey, SurveyCreateRequest, SurveyUpdateRequest } from '@/types'
+
+export const getSurveys = async (experimentId: string): Promise<Survey[]> => {
+  const response = await client.get<Survey[]>(`/admin/experiments/${experimentId}/surveys`)
+  return response.data
+}
+
+export const createSurvey = async (
+  experimentId: string,
+  data: SurveyCreateRequest,
+): Promise<Survey> => {
+  const response = await client.post<Survey>(
+    `/admin/experiments/${experimentId}/surveys`,
+    data,
+  )
+  return response.data
+}
+
+export const updateSurvey = async (
+  surveyId: string,
+  data: SurveyUpdateRequest,
+): Promise<Survey> => {
+  const response = await client.patch<Survey>(`/admin/surveys/${surveyId}`, data)
+  return response.data
+}
+
+export const deleteSurvey = async (surveyId: string): Promise<void> => {
+  await client.delete(`/admin/surveys/${surveyId}`)
+}
+
+export const downloadSurveyResponsesCSV = (surveyId: string): void => {
+  window.open(`/api/v1/admin/surveys/${surveyId}/responses/csv`, '_blank')
 }

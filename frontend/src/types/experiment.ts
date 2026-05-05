@@ -33,21 +33,33 @@ export interface RecommenderInfo {
  * straight into watch on first video), or a `ui_templates.id` UUID
  * pointing at an admin-authored template (visual or code track).
  *
- * Validated by the backend at request time. The admin UI fetches the
- * available list from `GET /admin/ui-presets` (built-ins) and
- * `GET /admin/ui-templates?status=published` (templates) — same pattern
- * as the recommender registry.
+ * Validated by the backend at request time.
  */
 export type UIKey = string
 
+/** Device class. Each user group is bound to one device (alembic 021). */
+export type Device = 'desktop' | 'tablet' | 'mobile'
+
+/**
+ * Flat per-surface UI configuration. Each value is either a built-in
+ * preset (desktop only) or a `ui_templates.id` UUID whose `device`
+ * matches the owning group's device. Participants whose viewport
+ * doesn't match the group's device see a mismatch notice rather than
+ * a scaled-down UI — this preserves the per-device experimental
+ * treatment.
+ */
 export interface UIConfig {
-  feed: UIKey   // built-in key, template UUID, or 'none'
-  watch: UIKey  // built-in key or template UUID
+  feed: UIKey
+  watch: UIKey
 }
 
 /**
- * UI preset metadata as surfaced by the admin dropdown.
- * `kind` distinguishes hardcoded built-ins from DB-registered templates.
+ * UI preset metadata as surfaced by the admin dropdown. `devices` is
+ * the set of device classes the preset was authored for; the admin
+ * dropdown filters by the owning group's device class. Templates
+ * always carry exactly one device (mirrors `ui_templates.device`);
+ * built-ins can list multiple devices when the preset has no
+ * device-specific UI (e.g. `'none'` redirects with no UI rendered).
  */
 export interface UIPresetInfo {
   key: UIKey
@@ -56,12 +68,14 @@ export interface UIPresetInfo {
   description: string
   supports_feed: boolean
   supports_watch: boolean
+  devices: Device[]
 }
 
 export interface UserGroup {
   id: number
   experiment_id: number
   name: string
+  device: Device
   algorithm_config: AlgorithmConfig
   ui_config: UIConfig
   config: Record<string, unknown> | null
@@ -72,6 +86,7 @@ export interface UserGroup {
 export interface UserGroupSummary {
   id: number
   name: string
+  device: Device
   algorithm_config: AlgorithmConfig
   user_count: number
   config: Record<string, unknown> | null
@@ -111,6 +126,7 @@ export interface ExperimentUpdateRequest {
 
 export interface UserGroupCreateRequest {
   name: string
+  device: Device
   algorithm_config: AlgorithmConfig
   ui_config: UIConfig
   config?: Record<string, unknown>
@@ -118,6 +134,7 @@ export interface UserGroupCreateRequest {
 
 export interface UserGroupUpdateRequest {
   name?: string
+  device?: Device
   algorithm_config?: AlgorithmConfig
   ui_config?: UIConfig
   config?: Record<string, unknown>

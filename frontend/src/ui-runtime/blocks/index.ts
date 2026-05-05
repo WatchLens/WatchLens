@@ -22,7 +22,7 @@ export { lookupBlock, listBlocks } from './registry'
 export { BlockTreeRenderer, RenderNode } from './BlockTreeRenderer'
 export type { BlockTreeRendererProps } from './BlockTreeRenderer'
 
-export { MOCK_FEED_VIDEOS, MOCK_RELATED_VIDEOS, MOCK_PAGE_VIDEO } from './mocks'
+export { MOCK_FEED_VIDEOS, MOCK_RELATED_VIDEOS, MOCK_PAGE_VIDEO, MOCK_COMMENTS } from './mocks'
 
 export {
   newNodeId,
@@ -39,7 +39,12 @@ export {
   findItemTemplate,
 } from './treeOps'
 
-export { DEFAULT_FEED_TREE, DEFAULT_WATCH_TREE } from './defaultTrees'
+export {
+  DEFAULT_FEED_TREE,
+  DEFAULT_WATCH_TREE,
+  getDefaultFeedTree,
+  getDefaultWatchTree,
+} from './defaultTrees'
 
 export {
   BLOCK_DISPLAY_NAME,

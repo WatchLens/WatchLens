@@ -36,23 +36,32 @@ import type {
   ExperimentStatus,
 } from '@/types'
 
-// UI Config Modal — built-in presets + admin-authored UI templates merged.
+// UI Config Modal — flat (feed, watch) keys filtered by the group's
+// device. Device assignment lives on the group itself (alembic 021),
+// so this modal doesn't need device tabs anymore.
 import { BUILTIN_UIS } from '@/ui-presets/registry'
-import type { UIPresetInfo } from '@/types/experiment'
+import type { UIPresetInfo, Device } from '@/types/experiment'
 
 interface UIConfigModalProps {
   isOpen: boolean
   onClose: () => void
   uiConfig: UIConfig
+  /** The owning group's device — drives template filtering. */
+  device: Device
   onSave: (config: UIConfig) => void
 }
 
-function UIConfigModal({ isOpen, onClose, uiConfig, onSave }: UIConfigModalProps): JSX.Element | null {
+const DEVICE_LABEL: Record<Device, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+}
+
+function UIConfigModal({ isOpen, onClose, uiConfig, device, onSave }: UIConfigModalProps): JSX.Element | null {
   const [config, setConfig] = useState<UIConfig>(uiConfig)
 
-  // Fetch admin-authored UI templates (status=published) and merge with
-  // the hardcoded built-in list. The dropdown treats both as equal
-  // first-class options.
+  // Fetch only templates whose device matches the group; built-ins are
+  // desktop-only and filtered against the group's device below too.
   const { data: templates = [] } = useQuery({
     queryKey: ['ui-templates-published'],
     queryFn: () => getUITemplates('published'),
@@ -68,57 +77,85 @@ function UIConfigModal({ isOpen, onClose, uiConfig, onSave }: UIConfigModalProps
     description: t.description || 'Admin-authored UI template.',
     supports_feed: true,
     supports_watch: true,
+    devices: [t.device],
   }))
   const allUIs: UIPresetInfo[] = [...BUILTIN_UIS, ...templateUIs]
-  const feedOptions = allUIs.filter((u) => u.supports_feed)
-  const watchOptions = allUIs.filter((u) => u.supports_watch)
 
   const handleSave = (): void => {
     onSave(config)
     onClose()
   }
 
-  const renderUISelector = (
-    field: 'feed' | 'watch',
+  const setSlot = (surface: 'feed' | 'watch', value: string): void => {
+    setConfig((prev) => ({ ...prev, [surface]: value }))
+  }
+
+  const renderSlot = (
+    surface: 'feed' | 'watch',
     label: string,
-    options: UIPresetInfo[],
-  ) => (
-    <div className="mb-5">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((ui) => (
-          <button
-            key={ui.key}
-            type="button"
-            title={ui.description}
-            onClick={() => setConfig({ ...config, [field]: ui.key })}
-            className={`text-left py-2 px-3 rounded-lg border-2 transition-colors ${
-              config[field] === ui.key
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="font-medium text-sm">
-              {ui.label}
-              {ui.kind === 'template' && (
-                <span className="ml-1 text-[10px] text-gray-400 font-normal">(template)</span>
-              )}
-            </div>
-          </button>
-        ))}
+  ): JSX.Element => {
+    const current = config[surface]
+
+    // Filter: presets must list the group's device + support this surface.
+    // YouTube desktop/tablet/mobile target one device each; `'none'` is
+    // device-agnostic (redirects without rendering UI).
+    const options = allUIs.filter((u) => {
+      if (surface === 'feed' && !u.supports_feed) return false
+      if (surface === 'watch' && !u.supports_watch) return false
+      return u.devices.includes(device)
+    })
+
+    return (
+      <div className="mb-4">
+        <div className="text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">
+          {label}
+        </div>
+        {options.length === 0 ? (
+          <div className="text-[11px] text-gray-400 py-2 px-3 bg-gray-50 rounded border border-dashed border-gray-200">
+            No {DEVICE_LABEL[device]}-tagged templates published yet. Author one in UI Custom and tag it for {DEVICE_LABEL[device]}.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {options.map((ui) => (
+              <button
+                key={ui.key}
+                type="button"
+                title={ui.description}
+                onClick={() => setSlot(surface, ui.key)}
+                className={`text-left py-2 px-3 rounded-lg border-2 transition-colors ${
+                  current === ui.key
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium text-sm">
+                  {ui.label}
+                  {ui.kind === 'template' && (
+                    <span className="ml-1 text-[10px] text-gray-400 font-normal">(template)</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">UI Configuration</h3>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold mb-1">UI Configuration</h3>
+        <p className="text-xs text-gray-500 mb-4">
+          This group's device is{' '}
+          <strong className="text-gray-700">{DEVICE_LABEL[device]}</strong>. Pick one
+          UI per surface; only {DEVICE_LABEL[device]}-tagged options appear.
+        </p>
 
-        {renderUISelector('feed', 'Feed Page UI', feedOptions)}
-        {renderUISelector('watch', 'Watch Page UI', watchOptions)}
+        {renderSlot('feed', 'Feed Page')}
+        {renderSlot('watch', 'Watch Page')}
 
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
           <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">
             Cancel
           </button>
@@ -217,9 +254,6 @@ function AlgorithmConfigModal({
   const [watchModel, setWatchModel] = useState<RecBoleModelConfig>(
     (groupConfig?.recbole_watch as RecBoleModelConfig) || { model: 'ItemKNN', top_k: 50 }
   )
-  const [reranking, setReranking] = useState<{enabled: boolean, model: string, alpha: number}>(
-    ((groupConfig?.recbole_watch as Record<string, unknown>)?.reranking as {enabled: boolean, model: string, alpha: number}) || { enabled: false, model: 'BPR', alpha: 0.3 }
-  )
 
   // Live recommender registry. Backend's `RECOMMENDERS` dict is the
   // single source of truth — adding a new policy server-side surfaces
@@ -246,7 +280,7 @@ function AlgorithmConfigModal({
       delete newGroupConfig.recbole_feed
     }
     if (usesRecboleWatch) {
-      newGroupConfig.recbole_watch = { ...watchModel, reranking }
+      newGroupConfig.recbole_watch = watchModel
     } else {
       delete newGroupConfig.recbole_watch
     }
@@ -321,49 +355,8 @@ function AlgorithmConfigModal({
                 models={watchModels}
               />
 
-              {/* Reranking option */}
-              <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <label className="flex items-center gap-2 text-xs font-medium text-purple-700">
-                  <input
-                    type="checkbox"
-                    checked={reranking.enabled}
-                    onChange={(e) => setReranking({...reranking, enabled: e.target.checked})}
-                  />
-                  Personalized Reranking
-                </label>
-                {reranking.enabled && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <div>
-                      <label className="text-xs text-purple-600">U2I Model</label>
-                      <select
-                        value={reranking.model}
-                        onChange={(e) => setReranking({...reranking, model: e.target.value})}
-                        className="ml-1 px-2 py-1 border border-purple-200 rounded text-xs"
-                      >
-                        {feedModels.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-purple-600">Alpha</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        value={reranking.alpha}
-                        onChange={(e) => setReranking({...reranking, alpha: parseFloat(e.target.value) || 0.3})}
-                        className="ml-1 w-16 px-2 py-1 border border-purple-200 rounded text-xs"
-                      />
-                    </div>
-                  </div>
-                )}
-                <p className="mt-1 text-[10px] text-purple-500">
-                  Reranks I2I results using personalization scores from the trained Feed model. Higher alpha increases personalization weight.
-                </p>
-              </div>
-
               <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-700">
-                Falls back to category/popularity-based recommendations when training data is insufficient.
+                Falls back to popularity when training data is insufficient.
               </div>
             </>
           )}
@@ -388,21 +381,23 @@ function AlgorithmConfigModal({
 }
 
 // Helper to format UI config for display.
-// Built-in keys ('youtube', 'tiktok', 'none') get a friendly label;
-// admin-authored UI templates (UUID keys) show as 'Template:<8-char>'.
+// Built-in keys (`youtube-{desktop,tablet,mobile}`, `tiktok-desktop`,
+// `none`) get a friendly label; admin-authored UI templates (UUID
+// keys) show as `Template:<8-char>`.
 function formatUIKey(key: string): string {
-  if (key === 'youtube') return 'YouTube'
-  if (key === 'tiktok') return 'TikTok'
+  if (key === 'youtube-desktop') return 'YouTube (Desktop)'
+  if (key === 'youtube-tablet') return 'YouTube (Tablet)'
+  if (key === 'youtube-mobile') return 'YouTube (Mobile)'
+  if (key === 'tiktok-desktop') return 'TikTok (Desktop)'
   if (key === 'none') return 'No feed'
+  if (!key) return '—'
   // UUID — show short form so the row stays readable.
   return `Template:${key.slice(0, 8)}`
 }
 
 function formatUIConfig(uiConfig: UIConfig | null | undefined): string {
-  if (!uiConfig) return 'F:YouTube / W:YouTube'
-  const feed = uiConfig.feed || 'youtube'
-  const watch = uiConfig.watch || 'youtube'
-  return `F:${formatUIKey(feed)} / W:${formatUIKey(watch)}`
+  if (!uiConfig) return 'F:— / W:—'
+  return `F:${formatUIKey(uiConfig.feed)} / W:${formatUIKey(uiConfig.watch)}`
 }
 
 // Helper to format algorithm config for display
@@ -463,12 +458,14 @@ function CollapsibleCard({
 }
 
 import RecBoleTab from './RecBoleTab'
+import SurveysTab from './SurveysTab'
 import UserStatusModal from '@/components/admin/UserStatusModal'
 
-type TabType = 'overview' | 'groups' | 'users' | 'videos' | 'stats' | 'recbole'
+type TabType = 'overview' | 'groups' | 'users' | 'videos' | 'surveys' | 'stats' | 'recbole'
 
 interface NewGroupState {
   name: string
+  device: Device
   algorithm_config: AlgorithmConfig
   ui_config: UIConfig
   config: Record<string, unknown> | null
@@ -493,8 +490,9 @@ export default function ExperimentDetail(): JSX.Element {
   const [statusUser, setStatusUser] = useState<{ id: string; login_id: string } | null>(null)
   const [newGroup, setNewGroup] = useState<NewGroupState>({
     name: '',
+    device: 'desktop',
     algorithm_config: { feed: 'random', watch: 'random' },
-    ui_config: { feed: 'youtube', watch: 'youtube' },
+    ui_config: { feed: 'youtube-desktop', watch: 'youtube-desktop' },
     config: null,
   })
   const [newUsers, setNewUsers] = useState<NewUsersState>({
@@ -561,8 +559,9 @@ export default function ExperimentDetail(): JSX.Element {
       setShowGroupForm(false)
       setNewGroup({
         name: '',
+        device: 'desktop',
         algorithm_config: { feed: 'random', watch: 'random' },
-        ui_config: { feed: 'youtube', watch: 'youtube' },
+        ui_config: { feed: 'youtube-desktop', watch: 'youtube-desktop' },
         config: null,
       })
     },
@@ -678,7 +677,7 @@ export default function ExperimentDetail(): JSX.Element {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex gap-8">
-          {(['overview', 'groups', 'users', 'videos', 'stats', 'recbole'] as const).map((tab) => (
+          {(['overview', 'groups', 'users', 'videos', 'surveys', 'stats', 'recbole'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => { if (tab !== 'recbole' || hasRecBole) setActiveTab(tab) }}
@@ -740,6 +739,34 @@ export default function ExperimentDetail(): JSX.Element {
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                     placeholder="e.g., Control, Treatment_A"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Device</label>
+                  <select
+                    value={newGroup.device}
+                    onChange={(e) => {
+                      const next = e.target.value as Device
+                      // Switching device invalidates the current ui_config
+                      // since templates / built-ins are device-tagged.
+                      // Reset to the safe defaults for the new device.
+                      setNewGroup({
+                        ...newGroup,
+                        device: next,
+                        ui_config:
+                          next === 'tablet'
+                            ? { feed: 'youtube-tablet', watch: 'youtube-tablet' }
+                            : next === 'mobile'
+                              ? { feed: 'youtube-mobile', watch: 'youtube-mobile' }
+                              : { feed: 'youtube-desktop', watch: 'youtube-desktop' },
+                      })
+                    }}
+                    disabled={isCompleted}
+                    className="mt-1 px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+                  >
+                    <option value="desktop">Desktop</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="mobile">Mobile</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Algorithm</label>
@@ -819,6 +846,7 @@ export default function ExperimentDetail(): JSX.Element {
             isOpen={showUIModal}
             onClose={() => setShowUIModal(false)}
             uiConfig={newGroup.ui_config}
+            device={newGroup.device}
             onSave={(config) => setNewGroup({ ...newGroup, ui_config: config })}
           />
 
@@ -863,6 +891,9 @@ export default function ExperimentDetail(): JSX.Element {
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Device
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Algorithm
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -880,6 +911,7 @@ export default function ExperimentDetail(): JSX.Element {
                 {groups?.map((group) => (
                   <tr key={group.id}>
                     <td className="px-6 py-4 font-medium">{group.name}</td>
+                    <td className="px-6 py-4 text-gray-500 capitalize">{group.device}</td>
                     <td className="px-6 py-4 text-gray-500">
                       <div>{formatAlgorithmConfig(group.algorithm_config)}</div>
                     </td>
@@ -1260,7 +1292,7 @@ export default function ExperimentDetail(): JSX.Element {
 
           {stats && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="text-gray-500 text-sm">Total Sessions</div>
                   <div className="text-3xl font-bold">{stats.overview.total_sessions}</div>
@@ -1268,14 +1300,6 @@ export default function ExperimentDetail(): JSX.Element {
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="text-gray-500 text-sm">Total Events</div>
                   <div className="text-3xl font-bold">{stats.overview.total_events}</div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="text-gray-500 text-sm">Avg Watch Ratio</div>
-                  <div className="text-3xl font-bold">
-                    {stats.overview.avg_watch_ratio
-                      ? `${(stats.overview.avg_watch_ratio * 100).toFixed(1)}%`
-                      : '-'}
-                  </div>
                 </div>
               </div>
 
@@ -1314,9 +1338,6 @@ export default function ExperimentDetail(): JSX.Element {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Events
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Avg Watch Ratio
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1330,11 +1351,6 @@ export default function ExperimentDetail(): JSX.Element {
                         <td className="px-6 py-4">{group.user_count}</td>
                         <td className="px-6 py-4">{group.session_count}</td>
                         <td className="px-6 py-4">{group.event_count}</td>
-                        <td className="px-6 py-4">
-                          {group.avg_watch_ratio
-                            ? `${(group.avg_watch_ratio * 100).toFixed(1)}%`
-                            : '-'}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1383,7 +1399,6 @@ export default function ExperimentDetail(): JSX.Element {
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ratio (med)</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Length (med)</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Duration (med)</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Impr.</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sessions</th>
                           </tr>
                         </thead>
@@ -1409,7 +1424,6 @@ export default function ExperimentDetail(): JSX.Element {
                               <td className="px-4 py-3 text-right text-sm">
                                 {formatSeconds(group.session_duration_median_seconds as number)}
                               </td>
-                              <td className="px-4 py-3 text-right text-sm text-gray-500">{group.total_impressions as number}</td>
                               <td className="px-4 py-3 text-right text-sm text-gray-500">{group.sessions_evaluated as number}</td>
                             </tr>
                           ))}
@@ -1432,6 +1446,8 @@ export default function ExperimentDetail(): JSX.Element {
           )}
         </div>
       )}
+
+      {effectiveTab === 'surveys' && <SurveysTab experimentId={id!} />}
 
       {effectiveTab === 'recbole' && <RecBoleTab experimentId={id!} groups={recboleGroups} />}
     </div>

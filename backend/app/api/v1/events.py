@@ -71,14 +71,14 @@ def create_events_batch(
         ).all()
         video_lookup = {ext_id: uuid_id for (uuid_id, ext_id) in rows}
 
-    # Count VIDEO_STARTs per resolved video so we can issue one UPDATE per
+    # Count VIDEO_PLAYs per resolved video so we can issue one UPDATE per
     # distinct video instead of one UPDATE per event.
     view_start_counts: Counter = Counter()
     now = datetime.utcnow()
     event_rows = []
     for event_data in batch.events:
         video_uuid = video_lookup.get(event_data.video_id) if event_data.video_id else None
-        if video_uuid and event_data.event_type == "VIDEO_START":
+        if video_uuid and event_data.event_type == "VIDEO_PLAY":
             view_start_counts[video_uuid] += 1
         event_rows.append({
             "session_id": batch.session_id,
@@ -96,7 +96,7 @@ def create_events_batch(
     if event_rows:
         db.bulk_insert_mappings(Event, event_rows)
 
-    # One atomic UPDATE per distinct video — concurrent VIDEO_START batches
+    # One atomic UPDATE per distinct video — concurrent VIDEO_PLAY batches
     # for the same video serialize safely at the row level.
     for video_uuid, n in view_start_counts.items():
         db.execute(

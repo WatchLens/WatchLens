@@ -10,11 +10,21 @@
  */
 import { Component, ErrorInfo, ReactNode, useMemo } from 'react'
 import { compileTSX, CompileError } from './compile'
+import { MockDataProvider } from './data/mockContext'
+import { MOCK_FEED_VIDEOS, MOCK_RELATED_VIDEOS, MOCK_PAGE_VIDEO, MOCK_COMMENTS } from './blocks/mocks'
 
 interface CompiledUIProps {
   source: string
   /** Optional fallback while the compiled component is mounting / resolving data. */
   fallback?: ReactNode
+  /**
+   * Editor-preview only. When true, the compiled component's data hooks
+   * (`useFeed`, `useVideo`, `useRelated`, `useComments`) short-circuit
+   * to bundled mock data instead of hitting the platform API. Mirrors
+   * `<BlockTreeRenderer mock>` so Visual / Code preview both work
+   * regardless of the admin's group assignment.
+   */
+  mock?: boolean
 }
 
 interface ErrorBoundaryState {
@@ -64,7 +74,7 @@ function ErrorPanel({ title, message, source }: { title: string; message: string
   )
 }
 
-export default function CompiledUI({ source, fallback }: CompiledUIProps): JSX.Element {
+export default function CompiledUI({ source, fallback, mock }: CompiledUIProps): JSX.Element {
   const compiled = useMemo(() => {
     try {
       return { kind: 'ok' as const, Component: compileTSX(source).Component }
@@ -81,7 +91,7 @@ export default function CompiledUI({ source, fallback }: CompiledUIProps): JSX.E
   }
 
   const { Component } = compiled
-  return (
+  const inner = (
     <RenderErrorBoundary>
       {fallback ? (
         <>
@@ -92,4 +102,21 @@ export default function CompiledUI({ source, fallback }: CompiledUIProps): JSX.E
       )}
     </RenderErrorBoundary>
   )
+
+  if (mock) {
+    return (
+      <MockDataProvider
+        value={{
+          feed: MOCK_FEED_VIDEOS,
+          related: MOCK_RELATED_VIDEOS,
+          pageVideo: MOCK_PAGE_VIDEO,
+          comments: MOCK_COMMENTS,
+        }}
+      >
+        {inner}
+      </MockDataProvider>
+    )
+  }
+
+  return inner
 }

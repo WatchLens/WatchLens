@@ -42,6 +42,7 @@ def list_experiments(
             UserGroupSummary(
                 id=g.id,
                 name=g.name,
+                device=g.device,
                 algorithm_config=g.algorithm_config,
                 user_count=len(g.users),
             )
@@ -119,6 +120,7 @@ def get_experiment(
         UserGroupSummary(
             id=g.id,
             name=g.name,
+            device=g.device,
             algorithm_config=g.algorithm_config,
             user_count=len(g.users),
         )
@@ -176,6 +178,7 @@ def update_experiment(
         UserGroupSummary(
             id=g.id,
             name=g.name,
+            device=g.device,
             algorithm_config=g.algorithm_config,
             user_count=len(g.users),
         )

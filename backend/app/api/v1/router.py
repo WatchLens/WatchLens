@@ -6,6 +6,7 @@ from .events import router as events_router
 from .sessions import router as sessions_router
 from .videos import router as videos_router
 from .ui_templates import router as ui_templates_router
+from .surveys import router as surveys_router
 from .admin import admin_router
 
 api_router = APIRouter()
@@ -17,6 +18,7 @@ api_router.include_router(events_router)
 api_router.include_router(sessions_router)
 api_router.include_router(videos_router)
 api_router.include_router(ui_templates_router)
+api_router.include_router(surveys_router)
 
 # Admin APIs
 api_router.include_router(admin_router)

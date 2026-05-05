@@ -1,7 +1,7 @@
 # Adding an external recommender (HTTP)
 
 External recommenders integrate any HTTP-speaking service as a
-first-class policy in VidRecLab — exactly the same admin UI dropdown,
+first-class policy in WatchLens — exactly the same admin UI dropdown,
 the same `algorithm_config.feed` / `.watch` JSONB, the same standardized
 events. This is the integration path for non-Python systems
 (TensorFlow Serving, Triton, vLLM, an R or Java service, a colleague's
@@ -17,7 +17,7 @@ moving parts.
 
 | You are doing this | Use |
 |--------------------|-----|
-| Writing a new algorithm in Python that can read VidRecLab's events / videos / similarity tables directly | Python plug-in |
+| Writing a new algorithm in Python that can read WatchLens's events / videos / similarity tables directly | Python plug-in |
 | Wrapping an existing TF Serving / Triton / vLLM endpoint | **HTTP (this doc)** |
 | Hosting a colleague's R / Java / Go model | **HTTP** |
 | Already running a model service for another platform | **HTTP** |

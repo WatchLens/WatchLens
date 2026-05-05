@@ -7,6 +7,14 @@ from .event import EventCreate, EventBatchCreate, EventResponse
 from .session import SessionCreate, SessionResponse
 from .ui_template import UITemplateCreate, UITemplateUpdate, UITemplateResponse, UITemplateListItem
 from .comment import CommentResponse, CommentListResponse
+from .survey import (
+    SurveyCreate,
+    SurveyUpdate,
+    SurveyResponse as SurveyOut,
+    SurveySubmit,
+    PendingSurvey,
+    SurveyResponseRow,
+)
 
 __all__ = [
     "LoginRequest",
@@ -36,4 +44,10 @@ __all__ = [
     "UITemplateListItem",
     "CommentResponse",
     "CommentListResponse",
+    "SurveyCreate",
+    "SurveyUpdate",
+    "SurveyOut",
+    "SurveySubmit",
+    "PendingSurvey",
+    "SurveyResponseRow",
 ]

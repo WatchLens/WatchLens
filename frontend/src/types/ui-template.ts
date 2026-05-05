@@ -1,4 +1,5 @@
 import type { BlockNode } from '@/ui-runtime/blocks'
+import type { Device } from './experiment'
 
 export type TemplateStatus = 'draft' | 'published'
 export type TemplateType = 'tree' | 'code'
@@ -9,6 +10,8 @@ export interface UITemplate {
   description: string | null
   status: TemplateStatus
   template_type: TemplateType
+  /** Target device for this template; one template covers exactly one device. */
+  device: Device
   feed_config: Record<string, Record<string, string | number>>
   watch_config: Record<string, Record<string, string | number>>
   feed_css: string
@@ -31,6 +34,7 @@ export interface UITemplateListItem {
   description: string | null
   status: TemplateStatus
   template_type: TemplateType
+  device: Device
   created_at: string
   updated_at: string
 }
@@ -39,6 +43,7 @@ export interface UITemplateCreateRequest {
   name: string
   description?: string
   template_type?: TemplateType
+  device?: Device
 }
 
 export interface UITemplateUpdateRequest {
@@ -46,6 +51,7 @@ export interface UITemplateUpdateRequest {
   description?: string
   status?: TemplateStatus
   template_type?: TemplateType
+  device?: Device
   feed_config?: Record<string, Record<string, string | number>>
   watch_config?: Record<string, Record<string, string | number>>
   feed_css?: string

@@ -1,10 +1,12 @@
 import { useAuth } from '@/contexts/AuthContext'
-import type { AlgorithmConfig, UIConfig } from '@/types'
+import type { AlgorithmConfig, Device, UIConfig } from '@/types'
 
 export interface UseUserResult {
   login_id: string | undefined
   user_id: string | undefined
   user_group_id: string | null
+  /** Group's device assignment; null for admins / unassigned users. */
+  device: Device | null
   algorithm_config: AlgorithmConfig | null
   ui_config: UIConfig | null
   is_admin: boolean
@@ -26,6 +28,7 @@ export function useUser(): UseUserResult {
     login_id: user?.login_id,
     user_id: user?.id != null ? String(user.id) : undefined,
     user_group_id: user?.user_group_id != null ? String(user.user_group_id) : null,
+    device: user?.device ?? null,
     algorithm_config: user?.algorithm_config ?? null,
     ui_config: user?.ui_config ?? null,
     is_admin: !!user?.is_admin,

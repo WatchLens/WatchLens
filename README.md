@@ -22,10 +22,16 @@ schema.
 - **Standardized event schema.** 33 events × 6 categories (session,
   navigation, playback, impressions, interactions, browser state) with
   recommendation policy and feed position attached to every row.
-- **Built-in metrics.** CTR, NDCG@K, Precision@K, watch ratio,
-  engagement rate — per-group, per-user, and full CSV export.
-- **RecBole integration.** Scheduled training over the events table
-  with a CF → I2I → popularity → recency fallback chain.
+- **Built-in metrics.** CTR, average watch time, watch ratio
+  (median + IQR), session length (median videos), session duration
+  (median seconds) — per-group, with full CSV event export.
+- **Built-in surveys.** Pre-study (forced gate), post-study, and
+  inter-session (asks about the prior session) — single / multi /
+  open-ended questions with quantized answer values for analysis. CSV
+  export per survey.
+- **RecBole integration.** Scheduled training over the events table.
+  Feed serves CF → popularity → recency fallback; watch serves I2I →
+  popularity (with internal model→`auto` similarity fall-through).
 - **Single-server deploy.** Docker Compose: `db`, `backend`, `frontend`,
   `data-nginx`.
 
@@ -149,6 +155,22 @@ reference: [`docs/editor-block-reference.md`](./docs/editor-block-reference.md).
 
 ---
 
+## Surveys
+
+Self-report data is captured through three timing kinds — pre-study
+(forced gate before feed entry), post-study (after the experiment is
+marked completed), and inter-session (asks about the prior session on
+new session start). Configure from the admin **Surveys** tab between
+**Videos** and **Stats**: pick a kind, write `single` / `multi` /
+`text` questions with quantized answer values, toggle `is_active`. The
+backend's partial unique indexes enforce "at most one active survey per
+kind per experiment" so admins cannot accidentally expose conflicting
+prompts.
+
+Full guide: [`docs/surveys.md`](./docs/surveys.md).
+
+---
+
 ## Documentation
 
 | Doc | |
@@ -158,6 +180,8 @@ reference: [`docs/editor-block-reference.md`](./docs/editor-block-reference.md).
 | [`docs/adding-an-external-recommender.md`](./docs/adding-an-external-recommender.md) | External HTTP service integration |
 | [`docs/adding-a-ui.md`](./docs/adding-a-ui.md) | UI authoring (code track + editors) |
 | [`docs/editor-block-reference.md`](./docs/editor-block-reference.md) | 19 visual-editor blocks |
+| [`docs/device-routing.md`](./docs/device-routing.md) | Per-device UI routing (one template per device, notice page for unconfigured slots) |
+| [`docs/surveys.md`](./docs/surveys.md) | Pre / post / inter-session survey system |
 | [`docs/phase1-verification.md`](./docs/phase1-verification.md) | Event-emission verification recipe |
 
 ---

@@ -6,6 +6,7 @@ import { EventProvider } from '@/contexts/EventContext'
 import Login from '@/pages/user/Login'
 import Feed from '@/pages/user/Feed'
 import VideoWatch from '@/pages/user/VideoWatch'
+import SurveyGate from '@/components/SurveyGate'
 
 // Admin pages
 import AdminLayout from '@/pages/admin/AdminLayout'
@@ -83,7 +84,9 @@ function AppRoutes(): JSX.Element {
         path="/"
         element={
           <ProtectedRoute>
-            <Feed />
+            <SurveyGate>
+              <Feed />
+            </SurveyGate>
           </ProtectedRoute>
         }
       />
@@ -91,7 +94,9 @@ function AppRoutes(): JSX.Element {
         path="/watch/:videoId"
         element={
           <ProtectedRoute>
-            <VideoWatch />
+            <SurveyGate>
+              <VideoWatch />
+            </SurveyGate>
           </ProtectedRoute>
         }
       />

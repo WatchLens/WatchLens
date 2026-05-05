@@ -8,7 +8,7 @@
  * and view counts so layout choices (overflow, line clamping, badge
  * positioning) surface in preview.
  */
-import type { Video } from '@/types'
+import type { Video, Comment } from '@/types'
 
 function mockVideo(i: number, partial?: Partial<Video>): Video {
   return {
@@ -64,3 +64,58 @@ export const MOCK_PAGE_VIDEO: Video = mockVideo(99, {
     'long enough to demonstrate description-block clamping and the expandable ' +
     'toggle. Researchers preview their watch-page block tree against this video.',
 })
+
+/**
+ * Mock top-level comments used by the editor preview's `CommentList`
+ * block. Mix of short / long bodies so admins see how their card
+ * styling handles realistic threads. Replies are not modelled in
+ * preview — `useReplies` returns `[]` under the mock context.
+ */
+export const MOCK_COMMENTS: Comment[] = [
+  {
+    id: 1,
+    comment_id: 'mock-c1',
+    parent_id: null,
+    author_name: 'Sample Researcher',
+    author_channel_id: 'mock-ch-1',
+    text: 'Great walkthrough — the layered explanation of impression vs click events made the schema click for me.',
+    like_count: 482,
+    published_at: '2026-04-12T10:24:00Z',
+    reply_count: 3,
+  },
+  {
+    id: 2,
+    comment_id: 'mock-c2',
+    parent_id: null,
+    author_name: 'Lab Visitor',
+    author_channel_id: 'mock-ch-2',
+    text: 'Question: how does the platform handle short replays of the same video within a session? Are they counted as one VIDEO_ENDED or multiple?',
+    like_count: 121,
+    published_at: '2026-04-13T08:11:00Z',
+    reply_count: 1,
+  },
+  {
+    id: 3,
+    comment_id: 'mock-c3',
+    parent_id: null,
+    author_name: 'UX Researcher',
+    author_channel_id: 'mock-ch-3',
+    text: '👍',
+    like_count: 22,
+    published_at: '2026-04-14T22:05:00Z',
+    reply_count: 0,
+  },
+  {
+    id: 4,
+    comment_id: 'mock-c4',
+    parent_id: null,
+    author_name: 'Anonymous',
+    author_channel_id: null,
+    text:
+      'I tried this with a small mp4 dataset and the watch_ratio distribution looked plausible. ' +
+      'Long comment to make sure the description-style atom blocks render correctly when the body wraps multiple lines.',
+    like_count: 9,
+    published_at: '2026-04-15T11:42:00Z',
+    reply_count: 0,
+  },
+]

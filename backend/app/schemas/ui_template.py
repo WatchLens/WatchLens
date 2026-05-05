@@ -5,12 +5,14 @@ from pydantic import BaseModel
 
 
 TemplateType = Literal["tree", "code"]
+Device = Literal["desktop", "tablet", "mobile"]
 
 
 class UITemplateCreate(BaseModel):
     name: str
     description: Optional[str] = None
     template_type: TemplateType = "tree"
+    device: Device = "desktop"
 
 
 class UITemplateUpdate(BaseModel):
@@ -18,6 +20,7 @@ class UITemplateUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None  # "draft" | "published"
     template_type: Optional[TemplateType] = None
+    device: Optional[Device] = None
     feed_config: Optional[Dict[str, Any]] = None
     watch_config: Optional[Dict[str, Any]] = None
     feed_css: Optional[str] = None
@@ -33,6 +36,7 @@ class UITemplateResponse(BaseModel):
     description: Optional[str] = None
     status: str
     template_type: TemplateType = "tree"
+    device: Device = "desktop"
     feed_config: Dict[str, Any] = {}
     watch_config: Dict[str, Any] = {}
     feed_css: str = ""
@@ -53,6 +57,7 @@ class UITemplateListItem(BaseModel):
     description: Optional[str] = None
     status: str
     template_type: TemplateType = "tree"
+    device: Device = "desktop"
     created_at: datetime
     updated_at: datetime
 

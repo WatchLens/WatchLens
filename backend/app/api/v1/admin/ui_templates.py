@@ -22,13 +22,16 @@ router = APIRouter(tags=["admin-ui-templates"])
 @router.get("/ui-templates", response_model=List[UITemplateListItem])
 def list_ui_templates(
     template_status: Optional[str] = Query(None, alias="status"),
+    device: Optional[str] = Query(None, description="Filter by device: desktop, tablet, mobile"),
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    """List all UI templates, optionally filtered by status."""
+    """List all UI templates, optionally filtered by status and device."""
     query = db.query(UITemplate)
     if template_status:
         query = query.filter(UITemplate.status == template_status)
+    if device:
+        query = query.filter(UITemplate.device == device)
     query = query.order_by(UITemplate.updated_at.desc())
     return query.all()
 
@@ -67,6 +70,7 @@ def create_ui_template(
         name=data.name,
         description=data.description,
         template_type=data.template_type,
+        device=data.device,
     )
     db.add(template)
     db.commit()
@@ -123,6 +127,13 @@ def update_ui_template(
                 detail="template_type must be 'tree' or 'code'",
             )
         template.template_type = data.template_type
+    if data.device is not None:
+        if data.device not in ("desktop", "tablet", "mobile"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="device must be 'desktop', 'tablet', or 'mobile'",
+            )
+        template.device = data.device
     if data.code_text is not None:
         template.code_text = data.code_text
     if data.feed_tree is not None:
@@ -190,6 +201,7 @@ def duplicate_ui_template(
         description=template.description,
         status="draft",
         template_type=template.template_type,
+        device=template.device,
         feed_config=template.feed_config,
         watch_config=template.watch_config,
         feed_css=template.feed_css,

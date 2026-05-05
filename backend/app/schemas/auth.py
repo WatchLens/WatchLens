@@ -13,8 +13,10 @@ class UserResponse(BaseModel):
     login_id: str
     is_admin: bool
     user_group_id: Optional[UUID] = None
-    algorithm_config: Optional[Dict[str, Any]] = None  # From user's group: {feed, watch}
-    ui_config: Optional[Dict[str, Any]] = None  # From user's group: {feed, watch}
+    # From user's group; null for admins or unassigned users.
+    device: Optional[str] = None  # 'desktop' | 'tablet' | 'mobile'
+    algorithm_config: Optional[Dict[str, Any]] = None  # {feed, watch}
+    ui_config: Optional[Dict[str, Any]] = None  # {feed, watch}
 
     class Config:
         from_attributes = True

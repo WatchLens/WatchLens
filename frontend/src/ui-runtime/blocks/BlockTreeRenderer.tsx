@@ -17,11 +17,12 @@
 import { useCallback, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useFeed, useVideo, useRelated } from '@/ui-runtime/data'
+import { MockDataProvider } from '@/ui-runtime/data/mockContext'
 import { FeedSurface, WatchSurface } from '@/ui-runtime/surfaces'
 import type { Video } from '@/types'
 import type { BlockNode, RenderEnv } from './types'
 import { lookupBlock } from './registry'
-import { MOCK_FEED_VIDEOS, MOCK_RELATED_VIDEOS, MOCK_PAGE_VIDEO } from './mocks'
+import { MOCK_FEED_VIDEOS, MOCK_RELATED_VIDEOS, MOCK_PAGE_VIDEO, MOCK_COMMENTS } from './mocks'
 
 export interface BlockTreeRendererProps {
   page: 'feed' | 'watch'
@@ -155,10 +156,16 @@ function MockTreeRoot({
   // Walks up the event target to find the nearest `data-block-id`
   // attribute (set by RenderNode below). Stops on the deepest match,
   // so clicking an inner atom selects the atom, not its container.
+  //
+  // Interactive elements (buttons, anchors) are passed through so
+  // their own onClick fires — this lets toggle UIs inside blocks
+  // (CommentList expand/collapse, VideoActions like / dislike, etc.)
+  // work in editor preview without being swallowed by row-selection.
   const handleClick = (e: React.MouseEvent): void => {
     if (!onSelectFromPreview) return
     let el: HTMLElement | null = e.target as HTMLElement
     while (el) {
+      if (el.tagName === 'BUTTON' || el.tagName === 'A') return
       const id = el.getAttribute?.('data-block-id')
       if (id) {
         e.stopPropagation()
@@ -169,7 +176,7 @@ function MockTreeRoot({
     }
   }
 
-  const inner =
+  const surfaceTree =
     page === 'feed' ? (
       <FeedSurface videos={feed}>
         <RenderNode node={tree} env={env} />
@@ -179,6 +186,22 @@ function MockTreeRoot({
         <RenderNode node={tree} env={env} />
       </WatchSurface>
     )
+
+  // Provide MockDataProvider so blocks that read via `useMockData()`
+  // (e.g. CommentList) get mock content too — keeps the visual editor
+  // preview self-contained without API round-trips.
+  const inner = (
+    <MockDataProvider
+      value={{
+        feed,
+        related,
+        pageVideo,
+        comments: MOCK_COMMENTS,
+      }}
+    >
+      {surfaceTree}
+    </MockDataProvider>
+  )
 
   return onSelectFromPreview ? <div onClickCapture={handleClick}>{inner}</div> : inner
 }

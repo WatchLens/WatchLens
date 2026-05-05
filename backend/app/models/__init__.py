@@ -9,6 +9,7 @@ from .recommendation_cache import RecommendationCache, ItemSimilarity
 from .training_run import TrainingRun
 from .comment import Comment
 from .recommender_registry import RecommenderRegistry
+from .survey import Survey, SurveyResponse
 
 __all__ = [
     "Experiment",
@@ -23,4 +24,6 @@ __all__ = [
     "TrainingRun",
     "Comment",
     "RecommenderRegistry",
+    "Survey",
+    "SurveyResponse",
 ]

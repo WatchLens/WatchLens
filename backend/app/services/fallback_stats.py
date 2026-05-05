@@ -27,8 +27,8 @@ class FallbackStats:
         with self._lock:
             counter = self._counters.get(key, Counter())
 
-        feed_stages = ["cf", "i2i_history", "popularity", "recency"]
-        watch_stages = ["i2i", "same_category", "popularity"]
+        feed_stages = ["cf", "popularity", "recency"]
+        watch_stages = ["i2i", "popularity"]
 
         result = {
             "feed": {s: counter.get(f"feed:{s}", 0) for s in feed_stages},

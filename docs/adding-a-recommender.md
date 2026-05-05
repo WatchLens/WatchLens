@@ -1,6 +1,6 @@
 # Adding a recommendation policy (Python plug-in)
 
-VidRecLab serves recommendations through a **plug-in** interface: every
+WatchLens serves recommendations through a **plug-in** interface: every
 policy implements `BaseRecommender` (one method, one DB session) and
 registers a single instance under a unique key. The dispatcher in
 `backend/app/api/v1/feed.py` looks up the policy by the key the user's
@@ -247,7 +247,7 @@ Full list with payload contracts: [`docs/event-schema.md`](./event-schema.md).
 ### Reusing other recommenders' caches
 
 `RecommendationCache` (RecBole U2I) and `ItemSimilarity` (RecBole I2I
-+ Gorse-style `algorithm='auto'` rows) are open for any policy to
++ metadata-based `algorithm='auto'` rows) are open for any policy to
 read. A common pattern: your algorithm's primary path returns nothing
 on cold start, so fall back to RecBole's pre-computed scores or to the
 `auto` similarity neighbors:
@@ -371,8 +371,8 @@ def get_recommendations(self, db, ..., user_id, ...):
 
 When your primary path returns < `limit` items, recursively call
 sibling recommenders. RecBole does this for free via its built-in
-fallback chain (CF → I2I-history → popularity → recency); for your
-own policy, compose explicitly:
+fallback chain (feed: CF → popularity → recency; watch: I2I →
+popularity); for your own policy, compose explicitly:
 
 ```python
 from . import RECOMMENDERS  # circular-import safe at call time
@@ -533,8 +533,7 @@ videos = rec.get_recommendations(
 
 ## Built-in recommenders
 
-For reference, the five built-ins (after the cleanup that retired
-`auto` and `jaccard`):
+For reference, the five built-ins:
 
 | Key | Class | Surface | Description |
 |-----|-------|:------:|-------------|

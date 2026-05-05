@@ -6,11 +6,11 @@
  * window global, and returns a React component. There is no build step.
  *
  * Imports the runtime resolves:
- *   '@vidreclab/runtime'   → window.__vidreclab__
- *   '@vidreclab/data'      → window.__vidreclab__.data
- *   '@vidreclab/surfaces'  → window.__vidreclab__.surfaces
- *   '@vidreclab/blocks'    → window.__vidreclab__.blocks
- *   'react'                → window.__vidreclab__.React
+ *   '@watchlens/runtime'   → window.__watchlens__
+ *   '@watchlens/data'      → window.__watchlens__.data
+ *   '@watchlens/surfaces'  → window.__watchlens__.surfaces
+ *   '@watchlens/blocks'    → window.__watchlens__.blocks
+ *   'react'                → window.__watchlens__.React
  *
  * Anything else throws at compile time so the researcher sees the missing
  * import in the editor before it can break a participant's session.
@@ -19,11 +19,11 @@ import { transform } from 'sucrase'
 import type { ComponentType } from 'react'
 
 const KNOWN_IMPORTS: Record<string, string> = {
-  '@vidreclab/runtime': 'window.__vidreclab__',
-  '@vidreclab/data': 'window.__vidreclab__.data',
-  '@vidreclab/surfaces': 'window.__vidreclab__.surfaces',
-  '@vidreclab/blocks': 'window.__vidreclab__.blocks',
-  react: 'window.__vidreclab__.React',
+  '@watchlens/runtime': 'window.__watchlens__',
+  '@watchlens/data': 'window.__watchlens__.data',
+  '@watchlens/surfaces': 'window.__watchlens__.surfaces',
+  '@watchlens/blocks': 'window.__watchlens__.blocks',
+  react: 'window.__watchlens__.React',
 }
 
 export interface CompileResult {
@@ -38,8 +38,8 @@ export class CompileError extends Error {
 }
 
 /**
- * Rewrite `import { x, y } from '@vidreclab/data'` to
- *   `const { x, y } = window.__vidreclab__.data`.
+ * Rewrite `import { x, y } from '@watchlens/data'` to
+ *   `const { x, y } = window.__watchlens__.data`.
  * Default imports become the whole runtime namespace; namespace imports
  * (`import * as X`) too.
  */
@@ -139,7 +139,7 @@ export function compileTSX(tsxSource: string): CompileResult {
   // imports React, so we expose it unconditionally.
   const wrapped = `
     "use strict";
-    const React = window.__vidreclab__.React;
+    const React = window.__watchlens__.React;
     ${rewritten}
     return typeof __default__ !== 'undefined' ? __default__ : null;
   `

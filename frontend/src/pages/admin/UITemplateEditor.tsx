@@ -17,12 +17,19 @@ import BlockTreeNodeEditor from '@/components/admin/ui-editor/BlockTreeNodeEdito
 import PreviewPanel from '@/components/admin/ui-editor/PreviewPanel'
 import CodePanel from '@/components/admin/ui-editor/CodePanel'
 import CompiledUI from '@/ui-runtime/CompiledUI'
-import { DEFAULT_FEED_TREE, DEFAULT_WATCH_TREE, blockTreeToTSX } from '@/ui-runtime/blocks'
+import {
+  DEFAULT_FEED_TREE,
+  DEFAULT_WATCH_TREE,
+  getDefaultFeedTree,
+  getDefaultWatchTree,
+  blockTreeToTSX,
+} from '@/ui-runtime/blocks'
 import type { BlockNode } from '@/ui-runtime/blocks'
 import type { PageTab, EditorMode, Viewport } from '@/components/admin/ui-editor/types'
+import type { Device } from '@/types'
 
-const DEFAULT_CODE_TEMPLATE = `import { useFeed } from '@vidreclab/data'
-import { FeedSurface, VideoSurface } from '@vidreclab/surfaces'
+const DEFAULT_CODE_TEMPLATE = `import { useFeed } from '@watchlens/data'
+import { FeedSurface, VideoSurface } from '@watchlens/surfaces'
 
 export default function MyFeed() {
   const { videos, isLoading } = useFeed({ limit: 12 })
@@ -54,7 +61,10 @@ export default function UITemplateEditor(): JSX.Element {
   // Editor state
   const [activeTab, setActiveTab] = useState<PageTab>('feed')
   const [mode, setMode] = useState<EditorMode>('visual')
-  const [viewport, setViewport] = useState<Viewport>('desktop')
+  // Device drives the preview viewport. One template = one device,
+  // so changing here re-tags the template (saved on next Save).
+  const [device, setDevice] = useState<Device>('desktop')
+  const viewport: Viewport = device
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Card-group focus is its own state so the preview can stay zoomed
   // in on the card even when no specific atom is selected (admin
@@ -76,15 +86,19 @@ export default function UITemplateEditor(): JSX.Element {
     enabled: !!templateId,
   })
 
-  // Hydrate state from server
+  // Hydrate state from server. Default tree picks the device-matching
+  // shape so a fresh tablet template opens at 2-col, mobile at 1-col,
+  // etc.
   useEffect(() => {
     if (template) {
-      setFeedTree((template.feed_tree as BlockNode | null) ?? DEFAULT_FEED_TREE)
-      setWatchTree((template.watch_tree as BlockNode | null) ?? DEFAULT_WATCH_TREE)
+      const dev = template.device ?? 'desktop'
+      setFeedTree((template.feed_tree as BlockNode | null) ?? getDefaultFeedTree(dev))
+      setWatchTree((template.watch_tree as BlockNode | null) ?? getDefaultWatchTree(dev))
       setFeedCss(template.feed_css || '')
       setWatchCss(template.watch_css || '')
       setCodeText(template.code_text || DEFAULT_CODE_TEMPLATE)
       if (template.template_type === 'code') setMode('code')
+      setDevice(dev)
       setSelectedId(null)
       setExpandedCardGroupKey(null)
       setIsDirty(false)
@@ -104,6 +118,7 @@ export default function UITemplateEditor(): JSX.Element {
   const buildSavePayload = useCallback(
     (extra: Parameters<typeof updateUITemplate>[1] = {}) => ({
       template_type: mode === 'code' ? ('code' as const) : ('tree' as const),
+      device,
       feed_tree: mode === 'visual' ? feedTree : undefined,
       watch_tree: mode === 'visual' ? watchTree : undefined,
       feed_css: feedCss,
@@ -111,7 +126,33 @@ export default function UITemplateEditor(): JSX.Element {
       code_text: codeText,
       ...extra,
     }),
-    [mode, feedTree, watchTree, feedCss, watchCss, codeText],
+    [mode, device, feedTree, watchTree, feedCss, watchCss, codeText],
+  )
+
+  const handleDeviceChange = useCallback(
+    (next: Viewport) => {
+      if (next === device) return
+      // Switching device replaces the trees with the new device's
+      // default — admin sees the topology that real platforms use at
+      // that viewport (1-col mobile / 2-col tablet / 4-col desktop).
+      // Confirm if there are unsaved edits so we don't silently
+      // discard them.
+      if (
+        isDirty &&
+        !window.confirm(
+          `Switching device replaces the current trees with the ${next} default.\n\nUnsaved edits will be lost. Continue?`,
+        )
+      ) {
+        return
+      }
+      setDevice(next)
+      setFeedTree(getDefaultFeedTree(next))
+      setWatchTree(getDefaultWatchTree(next))
+      setSelectedId(null)
+      setExpandedCardGroupKey(null)
+      setIsDirty(true)
+    },
+    [device, isDirty],
   )
 
   const handleSave = useCallback(() => {
@@ -212,7 +253,7 @@ export default function UITemplateEditor(): JSX.Element {
           setSelectedId(null)
         }}
         onModeChange={setMode}
-        onViewportChange={setViewport}
+        onViewportChange={handleDeviceChange}
         onSave={handleSave}
         onPublish={handlePublish}
         onBack={() => navigate('/admin/ui-custom')}
@@ -228,8 +269,8 @@ export default function UITemplateEditor(): JSX.Element {
                   Code (TSX)
                 </span>
                 <span className="text-[10px] text-gray-500">
-                  imports: <code className="text-gray-300">@vidreclab/data</code>,{' '}
-                  <code className="text-gray-300">@vidreclab/surfaces</code>
+                  imports: <code className="text-gray-300">@watchlens/data</code>,{' '}
+                  <code className="text-gray-300">@watchlens/surfaces</code>
                 </span>
               </div>
               <textarea
@@ -246,7 +287,7 @@ export default function UITemplateEditor(): JSX.Element {
                   Live preview
                 </span>
               </div>
-              <CompiledUI key={codeText} source={codeText} />
+              <CompiledUI key={codeText} source={codeText} mock />
             </div>
           </>
         ) : (

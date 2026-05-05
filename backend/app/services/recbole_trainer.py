@@ -33,10 +33,16 @@ def extract_interactions(db: Session, experiment_id: uuid.UUID) -> List[Dict]:
     """
     Extract user-video interactions from events table.
 
-    Maps event types to implicit feedback:
-    - VIDEO_START -> interaction (weight 1.0)
-    - LIKE -> interaction (weight 3.0)
-    - VIDEO_END with watch_ratio > 0.5 -> interaction (weight 2.0)
+    Maps event types to implicit feedback. We use VIDEO_WATCHED_1S
+    rather than VIDEO_PLAY for the base interaction signal because
+    VIDEO_PLAY fires on every (auto)play including page-load autoplay,
+    which inflates training data with weak / noisy signal. The 1-second
+    threshold filters that out — same definition as the watched-history
+    exclusion in `feed.py`.
+
+    - VIDEO_WATCHED_1S -> interaction (weight 1.0)
+    - LIKE             -> interaction (weight 3.0)
+    - VIDEO_ENDED with watch_ratio > 0.5 -> interaction (weight 2.0)
     """
     query = text("""
         SELECT
@@ -51,7 +57,7 @@ def extract_interactions(db: Session, experiment_id: uuid.UUID) -> List[Dict]:
         JOIN videos v ON e.video_id = v.id
         JOIN user_groups ug ON u.user_group_id = ug.id
         WHERE ug.experiment_id = :experiment_id
-          AND e.event_type IN ('VIDEO_START', 'LIKE', 'VIDEO_END')
+          AND e.event_type IN ('VIDEO_WATCHED_1S', 'LIKE', 'VIDEO_ENDED')
           AND e.video_id IS NOT NULL
         ORDER BY e.client_timestamp
     """)
@@ -62,11 +68,11 @@ def extract_interactions(db: Session, experiment_id: uuid.UUID) -> List[Dict]:
     for row in rows:
         user_id, item_id, event_type, watch_ratio, timestamp = row
 
-        if event_type == "VIDEO_START":
+        if event_type == "VIDEO_WATCHED_1S":
             weight = 1.0
         elif event_type == "LIKE":
             weight = 3.0
-        elif event_type == "VIDEO_END" and watch_ratio and watch_ratio > 0.5:
+        elif event_type == "VIDEO_ENDED" and watch_ratio and watch_ratio > 0.5:
             weight = 2.0
         else:
             continue

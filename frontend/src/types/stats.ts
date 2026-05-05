@@ -6,7 +6,6 @@ export interface StatsOverview {
   total_users: number
   total_sessions: number
   total_events: number
-  avg_watch_ratio: number | null
 }
 
 export interface EventCounts {
@@ -24,7 +23,6 @@ export interface GroupStats {
   user_count: number
   session_count: number
   event_count: number
-  avg_watch_ratio: number | null
   algorithm_config: AlgorithmConfig
   ui_config: UIConfig
 }

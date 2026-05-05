@@ -71,30 +71,16 @@ def get_experiment_stats(
 
         event_counts = {event_type: count for event_type, count in event_counts_query}
 
-    # Average watch ratio
-    avg_watch_ratio = None
-    if user_ids:
-        session_ids = db.query(UserSession.id).filter(
-            UserSession.user_id.in_(user_ids)
-        ).subquery()
-
-        result = db.query(func.avg(Event.watch_ratio)).filter(
-            Event.session_id.in_(session_ids),
-            Event.event_type == "VIDEO_END",
-            Event.watch_ratio.isnot(None)
-        ).scalar()
-
-        if result:
-            avg_watch_ratio = round(float(result), 3)
-
-    # Per-group stats
+    # Per-group stats. Watch-ratio aggregation lives in the evaluation
+    # endpoint (`/stats/evaluation`) — the median + IQR there is more
+    # robust on the heavy-tailed playback distribution and stays
+    # synchronized with the modern VIDEO_ENDED event name.
     group_stats = []
     for group in experiment.user_groups:
         group_user_ids = [u.id for u in group.users]
 
         group_sessions = 0
         group_events = 0
-        group_avg_watch = None
 
         if group_user_ids:
             group_sessions = db.query(UserSession).filter(
@@ -109,15 +95,6 @@ def get_experiment_stats(
                 Event.session_id.in_(group_session_ids)
             ).count()
 
-            result = db.query(func.avg(Event.watch_ratio)).filter(
-                Event.session_id.in_(group_session_ids),
-                Event.event_type == "VIDEO_END",
-                Event.watch_ratio.isnot(None)
-            ).scalar()
-
-            if result:
-                group_avg_watch = round(float(result), 3)
-
         group_stats.append({
             "id": str(group.id),
             "name": group.name,
@@ -126,7 +103,6 @@ def get_experiment_stats(
             "user_count": len(group.users),
             "session_count": group_sessions,
             "event_count": group_events,
-            "avg_watch_ratio": group_avg_watch,
         })
 
     return {
@@ -139,7 +115,6 @@ def get_experiment_stats(
             "total_users": total_users,
             "total_sessions": total_sessions,
             "total_events": sum(event_counts.values()),
-            "avg_watch_ratio": avg_watch_ratio,
         },
         "event_counts": event_counts,
         "group_stats": group_stats,
@@ -218,8 +193,6 @@ def get_recommendation_evaluation(
         "watch_ratios": [],
         "session_lengths": [],
         "session_durations": [],
-        "total_impressions": 0,
-        "total_clicks": 0,
         "sessions_evaluated": 0,
     })
 
@@ -235,7 +208,6 @@ def get_recommendation_evaluation(
 
         gm = group_metrics[group_id]
         gm["sessions_evaluated"] += 1
-        gm["total_impressions"] += len(impressions)
 
         # CTR — strict definition (FEED_CLICK only). Sessions with no
         # impressions contribute nothing to the CTR mean (not 0/0 = NaN
@@ -243,7 +215,6 @@ def get_recommendation_evaluation(
         impression_videos = {e["video_id"] for e in impressions}
         if impressions:
             clicked_impressions = feed_clicks & impression_videos
-            gm["total_clicks"] += len(clicked_impressions)
             gm["ctrs"].append(len(clicked_impressions) / len(impressions))
 
         # Watch time + watch ratio — pooled across every VIDEO_ENDED in
@@ -279,7 +250,7 @@ def get_recommendation_evaluation(
     overall_watch_ratios = []
     overall_session_lengths = []
     overall_session_durations = []
-    overall_impressions, overall_clicks, overall_sessions = 0, 0, 0
+    overall_sessions = 0
 
     for gid, info in group_info.items():
         gm = group_metrics[gid]
@@ -292,8 +263,6 @@ def get_recommendation_evaluation(
             "watch_ratio_median": _median(gm["watch_ratios"]),
             "session_length_median": _median(gm["session_lengths"]),
             "session_duration_median_seconds": _median(gm["session_durations"]),
-            "total_impressions": gm["total_impressions"],
-            "total_clicks": gm["total_clicks"],
             "sessions_evaluated": gm["sessions_evaluated"],
         })
 
@@ -302,8 +271,6 @@ def get_recommendation_evaluation(
         overall_watch_ratios.extend(gm["watch_ratios"])
         overall_session_lengths.extend(gm["session_lengths"])
         overall_session_durations.extend(gm["session_durations"])
-        overall_impressions += gm["total_impressions"]
-        overall_clicks += gm["total_clicks"]
         overall_sessions += gm["sessions_evaluated"]
 
     return {
@@ -313,8 +280,6 @@ def get_recommendation_evaluation(
             "watch_ratio_median": _median(overall_watch_ratios),
             "session_length_median": _median(overall_session_lengths),
             "session_duration_median_seconds": _median(overall_session_durations),
-            "total_impressions": overall_impressions,
-            "total_clicks": overall_clicks,
             "total_sessions_evaluated": overall_sessions,
         },
         "groups": groups_result,
@@ -331,7 +296,7 @@ def _empty_evaluation(group_info: dict) -> dict:
         "watch_ratio_median": 0,
         "session_length_median": 0,
         "session_duration_median_seconds": 0,
-        "total_impressions": 0, "total_clicks": 0, "sessions_evaluated": 0,
+        "sessions_evaluated": 0,
     }
     return {
         "overall": {
@@ -340,7 +305,7 @@ def _empty_evaluation(group_info: dict) -> dict:
             "watch_ratio_median": 0,
             "session_length_median": 0,
             "session_duration_median_seconds": 0,
-            "total_impressions": 0, "total_clicks": 0, "total_sessions_evaluated": 0,
+            "total_sessions_evaluated": 0,
         },
         "groups": [empty_group(gid, info) for gid, info in group_info.items()],
     }

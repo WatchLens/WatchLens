@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getUITemplates, createUITemplate, deleteUITemplate, duplicateUITemplate } from '@/api/admin'
-import type { UITemplateListItem } from '@/types'
+import type { UITemplateListItem, Device } from '@/types'
+
+const DEVICE_OPTIONS: Array<{ value: Device; label: string; hint: string }> = [
+  { value: 'desktop', label: 'Desktop', hint: '≥ 1024px' },
+  { value: 'tablet',  label: 'Tablet',  hint: '768–1023px' },
+  { value: 'mobile',  label: 'Mobile',  hint: '< 768px' },
+]
 
 export default function UICustom(): JSX.Element {
   const navigate = useNavigate()
@@ -10,6 +16,7 @@ export default function UICustom(): JSX.Element {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newName, setNewName] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [newDevice, setNewDevice] = useState<Device>('desktop')
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['ui-templates'],
@@ -43,7 +50,11 @@ export default function UICustom(): JSX.Element {
 
   const handleCreate = (): void => {
     if (!newName.trim()) return
-    createMutation.mutate({ name: newName.trim(), description: newDescription.trim() || undefined })
+    createMutation.mutate({
+      name: newName.trim(),
+      description: newDescription.trim() || undefined,
+      device: newDevice,
+    })
   }
 
   const handleDelete = (template: UITemplateListItem): void => {
@@ -125,7 +136,12 @@ export default function UICustom(): JSX.Element {
                 {template.description && (
                   <p className="text-gray-500 text-sm truncate mb-2">{template.description}</p>
                 )}
-                <div className="text-gray-400 text-xs">Updated {formatDate(template.updated_at)}</div>
+                <div className="flex items-center gap-2 text-gray-400 text-xs">
+                  <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 font-medium uppercase">
+                    {template.device}
+                  </span>
+                  <span>Updated {formatDate(template.updated_at)}</span>
+                </div>
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
@@ -193,6 +209,31 @@ export default function UICustom(): JSX.Element {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target device
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {DEVICE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setNewDevice(opt.value)}
+                      className={`px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
+                        newDevice === opt.value
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <div className="font-medium">{opt.label}</div>
+                      <div className="text-[10px] text-gray-500 font-normal">{opt.hint}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-500 mt-2 leading-relaxed">
+                  One template = one device. Cover multiple devices by authoring separate templates and assigning each in the group's UI Config.
+                </p>
+              </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -200,6 +241,7 @@ export default function UICustom(): JSX.Element {
                   setShowCreateModal(false)
                   setNewName('')
                   setNewDescription('')
+                  setNewDevice('desktop')
                 }}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
               >

@@ -169,6 +169,10 @@ function CardFocus({
   const handleClick = (e: React.MouseEvent): void => {
     let el: HTMLElement | null = e.target as HTMLElement
     while (el) {
+      // Pass through interactive elements so their onClick (e.g.
+      // CommentList toggle, VideoActions like) runs instead of being
+      // swallowed by row-selection.
+      if (el.tagName === 'BUTTON' || el.tagName === 'A') return
       const id = el.getAttribute?.('data-block-id')
       if (id) {
         e.stopPropagation()

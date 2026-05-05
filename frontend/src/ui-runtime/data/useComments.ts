@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getVideoComments, getCommentReplies } from '@/api/videos'
 import type { Comment, CommentListResponse } from '@/types'
+import { useMockData } from './mockContext'
 
 const DEFAULT_PAGE_SIZE = 20
 const DEFAULT_REPLIES_PAGE_SIZE = 10
@@ -26,7 +27,8 @@ export function useComments(
   opts: UseCommentsOptions = {},
 ): UseCommentsResult {
   const pageSize = opts.pageSize ?? DEFAULT_PAGE_SIZE
-  const enabled = (opts.enabled ?? true) && !!videoId
+  const mock = useMockData()
+  const enabled = (opts.enabled ?? true) && !!videoId && mock === null
 
   const query = useInfiniteQuery<CommentListResponse>({
     queryKey: ['comments', videoId, pageSize],
@@ -36,6 +38,19 @@ export function useComments(
     initialPageParam: 1,
     enabled,
   })
+
+  if (mock !== null) {
+    const list = mock.comments ?? []
+    return {
+      comments: list,
+      total: list.length,
+      hasMore: false,
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      loadMore: () => {},
+    }
+  }
 
   const comments = useMemo(
     () => query.data?.pages.flatMap((p) => p.comments) ?? [],
@@ -83,7 +98,8 @@ export function useReplies(
   opts: UseRepliesOptions = {},
 ): UseRepliesResult {
   const pageSize = opts.pageSize ?? DEFAULT_REPLIES_PAGE_SIZE
-  const enabled = (opts.enabled ?? true) && !!videoId && !!commentId
+  const mock = useMockData()
+  const enabled = (opts.enabled ?? true) && !!videoId && !!commentId && mock === null
 
   const query = useInfiniteQuery<CommentListResponse>({
     queryKey: ['replies', videoId, commentId, pageSize],
@@ -93,6 +109,17 @@ export function useReplies(
     initialPageParam: 1,
     enabled,
   })
+
+  if (mock !== null) {
+    return {
+      replies: [],
+      hasMore: false,
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      loadMore: () => {},
+    }
+  }
 
   const replies = useMemo(
     () => query.data?.pages.flatMap((p) => p.comments) ?? [],

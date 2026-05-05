@@ -159,43 +159,35 @@ one pass.
 | Reader | File | Event types it filters on |
 |--------|------|--------------------------|
 | Watched-video exclusion (Feed / Watch endpoints) | `backend/app/api/v1/feed.py` | `VIDEO_WATCHED_1S`, `VIDEO_ENDED` |
-| Per-experiment view counter | `backend/app/api/v1/events.py` | `VIDEO_START` (legacy alias — see drift below) |
-| Recommendation evaluation | `backend/app/api/v1/admin/stats.py` | `IMPRESSION`, `FEED_CLICK`, `VIDEO_START`, `VIDEO_END`, `LIKE` |
-| RecBole training extraction | `backend/app/services/recbole_trainer.py` | `VIDEO_START`, `LIKE`, `VIDEO_END` |
+| Per-experiment view counter | `backend/app/api/v1/events.py` | `VIDEO_PLAY` (popularity sort key — autoplay-included by design) |
+| Recommendation evaluation | `backend/app/api/v1/admin/stats.py` | `IMPRESSION`, `FEED_CLICK`, `VIDEO_PLAY`, `VIDEO_ENDED` |
+| RecBole training extraction | `backend/app/services/recbole_trainer.py` | `VIDEO_WATCHED_1S` (weight 1.0), `LIKE` (3.0), `VIDEO_ENDED` w/ ratio>0.5 (2.0) |
 | Auto I2I (metadata + co-view) | `backend/app/services/item_similarity_computer.py` | any (interaction filtered by `video_id IS NOT NULL`) |
-| RecBole CF / I2I freshness check | `backend/app/services/training_scheduler.py` | `VIDEO_START`, `LIKE`, `VIDEO_END` |
-| RecBole feed I2I-from-history fallback | `backend/app/recommenders/recbole.py` | `VIDEO_START`, `VIDEO_END` |
+| RecBole CF / I2I freshness check | `backend/app/services/training_scheduler.py` | `VIDEO_WATCHED_1S`, `LIKE`, `VIDEO_ENDED` |
 | Trajectory view (admin user status) | `backend/app/api/v1/admin/stats.py` | excludes `MOUSE_MOVEMENT`, `SCROLL`, `VIEWPORT_VISIBILITY`, `VIDEO_PROGRESS`, `VISIBILITY_CHANGE`, `WINDOW_FOCUS`, `WINDOW_BLUR` |
 
-## Known drift: VIDEO_START / VIDEO_END
+## Backend event-name reads (post-2026-05-06)
 
-The frontend stopped emitting `VIDEO_START` / `VIDEO_END` when the playback
-surface was redesigned around a richer playback lifecycle (`VIDEO_PLAY`,
-`VIDEO_PAUSE`, `VIDEO_ENDED`, `VIDEO_WATCHED_1S`, `VIDEO_WATCHED_5S`). The
-backend training pipeline and view-count increment still query the old
-names — the affected files (current as of this doc update) are:
+The frontend emits the modern playback lifecycle (`VIDEO_PLAY`,
+`VIDEO_PAUSE`, `VIDEO_ENDED`, `VIDEO_WATCHED_1S`, `VIDEO_WATCHED_5S`) —
+the legacy `VIDEO_START` / `VIDEO_END` names were retired. Backend reads
+have been aligned and now use semantically appropriate modern names:
 
-- `backend/app/api/v1/events.py` (per-experiment view-count increment)
-- `backend/app/api/v1/admin/stats.py` (recommendation evaluation)
-- `backend/app/services/recbole_trainer.py` (interaction extraction)
-- `backend/app/services/training_scheduler.py` (CF / I2I freshness check)
-- `backend/app/recommenders/recbole.py` (I2I-from-history fallback)
+| Reader | File | Event types |
+|--------|------|-------------|
+| Watched-video exclusion | `backend/app/api/v1/feed.py` | `VIDEO_WATCHED_1S`, `VIDEO_ENDED` |
+| Per-experiment view counter | `backend/app/api/v1/events.py` | `VIDEO_PLAY` (popularity sort key — autoplay-included by design) |
+| RecBole training extraction | `backend/app/services/recbole_trainer.py` | `VIDEO_WATCHED_1S` (weight 1.0), `LIKE` (3.0), `VIDEO_ENDED` w/ ratio>0.5 (2.0) |
+| RecBole CF / I2I freshness | `backend/app/services/training_scheduler.py` | same as training extraction |
+| Recommendation evaluation | `backend/app/api/v1/admin/stats.py` | `IMPRESSION`, `FEED_CLICK`, `VIDEO_PLAY`, `VIDEO_ENDED`, (LIKE retained pre-drop) |
+| Trajectory view (admin) | `backend/app/api/v1/admin/stats.py` | excludes high-frequency types (`MOUSE_MOVEMENT`, `SCROLL`, etc.) |
 
-**Effect**: training extracts zero implicit-feedback interactions on the
-modern frontend, and the legacy view counter never increments.
-
-**Resolution path** (deferred — not blocking documentation): rename the
-backend reads to the new names. `VIDEO_PLAY` (per resume) replaces
-`VIDEO_START` (first start only); `VIDEO_ENDED` replaces `VIDEO_END`,
-plus `VIDEO_WATCHED_1S` for sub-1s completions covered by the feed
-exclusion query. Restoring legacy emissions on the frontend is the
-inferior path — the new names carry richer semantics and are already in
-production use elsewhere (e.g. the watched-video exclusion in
-`feed.py:31` uses `VIDEO_WATCHED_1S` / `VIDEO_ENDED` correctly).
-
-The fix is small (~5 SQL string changes) but requires careful backend
-testing of the training pipeline to verify interaction extraction
-recovers, so it's tracked separately from the documentation sweep.
+**Why `VIDEO_WATCHED_1S` for training rather than `VIDEO_PLAY`**: the
+1-second threshold filters autoplay-on-page-load false positives, leaving
+only "user actually watched" signal — matching the watched-history
+exclusion in `feed.py` for consistency. Use `VIDEO_PLAY` only when the
+desired signal includes raw playback starts (e.g., the popularity view
+counter, where autoplay-driven counts are intentional).
 
 ## Embedded video sources (YouTube, Vimeo, ...)
 

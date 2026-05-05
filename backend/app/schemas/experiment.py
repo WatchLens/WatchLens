@@ -24,6 +24,7 @@ class ExperimentUpdate(BaseModel):
 class UserGroupSummary(BaseModel):
     id: UUID
     name: str
+    device: str = "desktop"
     algorithm_config: AlgorithmConfig = AlgorithmConfig()
     user_count: int = 0
     config: Optional[Dict[str, Any]] = None

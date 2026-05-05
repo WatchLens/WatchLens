@@ -96,45 +96,49 @@ export default function EditorToolbar({
         </button>
       </div>
 
-      {/* Viewport (only in visual mode) */}
-      {mode === 'visual' && (
-        <>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex gap-0.5">
-            {(['desktop', 'tablet', 'mobile'] as const).map((vp) => (
-              <button
-                key={vp}
-                onClick={() => onViewportChange(vp)}
-                className={`w-7 h-7 flex items-center justify-center rounded border transition-colors ${
-                  viewport === vp
-                    ? 'bg-blue-50 text-blue-600 border-blue-300'
-                    : 'bg-white text-gray-400 border-gray-200 hover:text-gray-600'
-                }`}
-                title={vp}
-              >
-                {vp === 'desktop' && (
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="2" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <path d="M5 14h6M8 12v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                )}
-                {vp === 'tablet' && (
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                    <rect x="3" y="1" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <circle cx="8" cy="13" r="0.8" fill="currentColor" />
-                  </svg>
-                )}
-                {vp === 'mobile' && (
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                    <rect x="4" y="1" width="8" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <path d="M6.5 12.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {/* Device picker — drives the preview viewport. One template
+          targets one device, so changing here also re-tags the
+          template (saved on next Save). */}
+      <div className="w-px h-6 bg-gray-200" />
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+          Device
+        </span>
+        <div className="flex gap-0.5">
+          {(['desktop', 'tablet', 'mobile'] as const).map((vp) => (
+            <button
+              key={vp}
+              onClick={() => onViewportChange(vp)}
+              className={`px-2 h-7 text-[11px] font-medium rounded border transition-colors flex items-center gap-1 ${
+                viewport === vp
+                  ? 'bg-blue-50 text-blue-700 border-blue-400'
+                  : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
+              }`}
+              title={`Author for ${vp}`}
+            >
+              {vp === 'desktop' && (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="2" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M5 14h6M8 12v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              )}
+              {vp === 'tablet' && (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                  <rect x="3" y="1" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                  <circle cx="8" cy="13" r="0.8" fill="currentColor" />
+                </svg>
+              )}
+              {vp === 'mobile' && (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                  <rect x="4" y="1" width="8" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M6.5 12.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              )}
+              <span className="capitalize">{vp}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Spacer + Actions */}
       <div className="ml-auto flex items-center gap-2">

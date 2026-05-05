@@ -7,8 +7,8 @@
  *   is emitted automatically.
  *
  * Imports from the in-browser code track are rewritten from
- * `@vidreclab/runtime` (or `@vidreclab/data`, `@vidreclab/surfaces`) to
- * `window.__vidreclab__` at compile time. Bundled UI presets import from
+ * `@watchlens/runtime` (or `@watchlens/data`, `@watchlens/surfaces`) to
+ * `window.__watchlens__` at compile time. Bundled UI presets import from
  * this module path directly.
  */
 

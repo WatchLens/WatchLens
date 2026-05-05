@@ -60,7 +60,7 @@ function ReplyList({ videoId, commentId, replyCount }: ReplyListProps): JSX.Elem
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-medium mt-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-full"
+        className="flex items-center gap-2 text-blue-600 text-xs font-medium mt-1 hover:bg-blue-50 px-2 py-1 rounded-full"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -79,14 +79,14 @@ function ReplyList({ videoId, commentId, replyCount }: ReplyListProps): JSX.Elem
         <button
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="text-blue-600 dark:text-blue-400 text-xs font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-full"
+          className="text-blue-600 text-xs font-medium hover:bg-blue-50 px-2 py-1 rounded-full"
         >
           {isFetchingNextPage ? 'Loading...' : 'Show more replies'}
         </button>
       )}
       <button
         onClick={() => setExpanded(false)}
-        className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-full"
+        className="flex items-center gap-1 text-blue-600 text-xs font-medium hover:bg-blue-50 px-2 py-1 rounded-full"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
@@ -109,8 +109,8 @@ function CommentItem({ comment, videoId, isReply = false }: CommentItemProps): J
   return (
     <div className={`flex gap-3 ${isReply ? '' : ''}`}>
       {/* Avatar */}
-      <div className={`flex-shrink-0 ${isReply ? 'w-6 h-6' : 'w-10 h-10'} rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center`}>
-        <span className={`${isReply ? 'text-[10px]' : 'text-sm'} font-medium text-gray-600 dark:text-gray-400`}>
+      <div className={`flex-shrink-0 ${isReply ? 'w-6 h-6' : 'w-10 h-10'} rounded-full bg-gray-300 flex items-center justify-center`}>
+        <span className={`${isReply ? 'text-[10px]' : 'text-sm'} font-medium text-gray-600`}>
           {(comment.author_name || '?')[0].toUpperCase()}
         </span>
       </div>
@@ -118,21 +118,21 @@ function CommentItem({ comment, videoId, isReply = false }: CommentItemProps): J
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`font-medium text-gray-900 dark:text-white ${isReply ? 'text-xs' : 'text-[13px]'}`}>
+          <span className={`font-medium text-gray-900 ${isReply ? 'text-xs' : 'text-[13px]'}`}>
             {comment.author_name}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-gray-500">
             {timeAgo(comment.published_at)}
           </span>
         </div>
 
-        <p className={`text-gray-800 dark:text-gray-200 mt-0.5 whitespace-pre-line ${isReply ? 'text-xs' : 'text-sm'}`}>
+        <p className={`text-gray-800 mt-0.5 whitespace-pre-line ${isReply ? 'text-xs' : 'text-sm'}`}>
           {comment.text}
         </p>
 
         {/* Like count */}
         <div className="flex items-center gap-3 mt-1">
-          <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1 text-gray-500">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
@@ -196,11 +196,11 @@ export default function CommentSection({
       <div className="mt-6">
         <button
           onClick={() => setExpanded(true)}
-          className="w-full text-left p-3 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="w-full text-left p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
         >
           <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-900 dark:text-white text-sm">
-              Comments {total > 0 && <span className="text-gray-500 dark:text-gray-400 font-normal">{total.toLocaleString()}</span>}
+            <span className="font-medium text-gray-900 text-sm">
+              Comments {total > 0 && <span className="text-gray-500 font-normal">{total.toLocaleString()}</span>}
             </span>
             <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -213,24 +213,24 @@ export default function CommentSection({
 
   return (
     <div className="mt-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium text-gray-900 dark:text-white text-sm">
-          Comments <span className="text-gray-500 dark:text-gray-400 font-normal">{total.toLocaleString()}</span>
+      {/* Header — clickable as a whole, mirroring the collapsed state so
+          the same target opens AND closes the section. */}
+      <button
+        type="button"
+        onClick={() => setExpanded(false)}
+        className="w-full flex items-center justify-between mb-4 text-left hover:bg-gray-100 rounded-md px-2 -mx-2 py-1 transition-colors"
+      >
+        <h3 className="font-medium text-gray-900 text-sm">
+          Comments <span className="text-gray-500 font-normal">{total.toLocaleString()}</span>
         </h3>
-        <button
-          onClick={() => setExpanded(false)}
-          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-      </div>
+        <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
 
       {/* Comment list */}
       {isLoading && (
-        <div className="text-gray-500 dark:text-gray-400 text-sm py-4">Loading comments...</div>
+        <div className="text-gray-500 text-sm py-4">Loading comments...</div>
       )}
 
       <div className="space-y-4">
@@ -244,14 +244,14 @@ export default function CommentSection({
         <button
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="mt-4 w-full py-2 text-center text-blue-600 dark:text-blue-400 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+          className="mt-4 w-full py-2 text-center text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg transition-colors"
         >
           {isFetchingNextPage ? 'Loading...' : 'Show more comments'}
         </button>
       )}
 
       {!isLoading && allComments.length === 0 && (
-        <div className="text-gray-500 dark:text-gray-400 text-sm py-4">No comments yet</div>
+        <div className="text-gray-500 text-sm py-4">No comments yet</div>
       )}
     </div>
   )

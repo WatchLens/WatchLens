@@ -89,6 +89,9 @@ for columns.
 | `gap` | size | Gap between children. |
 | `align` | alignment | `start` / `center` / `end` / `stretch` (cross-axis). |
 | `justify` | select | `start` / `center` / `end` / `space-between` / `space-around`. |
+| `background` | color | Container background. Empty = transparent. |
+| `padding` | spacing | `'16px'` or `'8px 16px'`. Empty = no padding. |
+| `borderRadius` | size | Empty = sharp corners. |
 
 ### Grid
 
@@ -104,6 +107,9 @@ shapes:
 | `columns` | number | Equal columns count. Ignored when `columnsTemplate` is non-empty. |
 | `columnsTemplate` | text | Raw `grid-template-columns` value. |
 | `gap` | size | |
+| `background` | color | Container background. Empty = transparent. |
+| `padding` | spacing | `'16px'` or `'8px 16px'`. Empty = no padding. |
+| `borderRadius` | size | Empty = sharp corners. |
 
 ### SplitColumn (Two Columns)
 
@@ -214,6 +220,9 @@ emit `LIKE` / `DISLIKE` automatically.
 |------|------|-------|
 | `showLike` | toggle | |
 | `showDislike` | toggle | |
+| `background` | color | Pill container background. Empty = Tailwind `bg-gray-100` default. |
+| `color` | color | Text + heart-icon color in inactive state. Empty = Tailwind `text-gray-700`. |
+| `activeColor` | color | Color when liked / disliked. Empty = Tailwind `text-blue-600`. |
 
 ### CommentList
 
@@ -284,7 +293,8 @@ video has no duration.
 | `lineClamp` | number | Lines before truncation (1–20). |
 | `expandable` | toggle | When true, renders an expand toggle (`...Show more` / `Show less`). |
 | `fontSize` | size | |
-| `color` | color | |
+| `color` | color | Text color. |
+| `background` | color | Wrapper background — only applies when `expandable=true`. Empty = Tailwind `bg-gray-100`. |
 
 ### VideoTags
 

@@ -33,7 +33,7 @@ import {
 import BlockPalette from './BlockPalette'
 import PropertyPanel from './PropertyPanel'
 
-const DRAG_MIME = 'application/x-vidreclab-block-id'
+const DRAG_MIME = 'application/x-watchlens-block-id'
 
 interface BlockTreeNodeEditorProps {
   tree: BlockNode

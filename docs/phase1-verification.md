@@ -87,7 +87,7 @@ Open a `psql` shell against the running DB:
 docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 ```
 
-(Defaults: `vidreclab` / `vidreclab` — `.env.example`.)
+(Defaults: `watchlens` / `watchlens` — `.env.example`.)
 
 ### Recent events for your session
 
