@@ -183,18 +183,6 @@ Full guide: [`docs/surveys.md`](./docs/surveys.md).
 
 ---
 
-## Citation
-
-```bibtex
-@inproceedings{kim2026watchlens,
-  title     = {WatchLens: A Configurable Platform for Online Video Recommendation Experiments},
-  author    = {Kim, Deogyong and Lee, Dongha},
-  booktitle = {Proceedings of the 20th ACM Conference on Recommender Systems (RecSys '26)},
-  year      = {2026},
-  note      = {Under review},
-}
-```
-
 ## License
 
-MIT.
+Released under the [MIT License](./LICENSE).
