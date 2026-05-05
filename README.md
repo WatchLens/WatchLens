@@ -5,9 +5,6 @@ experiments** — vary the UI, content pool, and recommendation policy
 independently while every interface emits the same exposure-aware event
 schema.
 
-> The repository name is `VidRecLab` (working title); the platform is
-> presented as **WatchLens** in our RecSys 2026 paper.
-
 ---
 
 ## Features

@@ -16,7 +16,7 @@ or non-admin) assigned to a group. If a fresh DB, follow `README.md`'s
 Quick start first.
 
 ```bash
-cd <repo root>            # e.g. /Users/<you>/Project/VidRecLab
+cd <repo root>            # e.g. /Users/<you>/Project/WatchLens
 docker compose up -d --build
 ```
 
