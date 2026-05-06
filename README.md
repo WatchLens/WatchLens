@@ -18,7 +18,8 @@ schema.
   same event schema.
 - **Standardized event schema.** 33 events × 6 categories (session,
   navigation, playback, impressions, interactions, browser state) with
-  recommendation policy and feed position attached to every row.
+  per-surface recommender keys (feed + watch) and feed position
+  attached to every row.
 - **Built-in metrics.** CTR, average watch time, watch ratio
   (median + IQR), session length (median videos), session duration
   (median seconds) — per-group, with full CSV event export.
@@ -169,6 +170,8 @@ Full guide: [`docs/surveys.md`](./docs/surveys.md).
 ---
 
 ## Documentation
+
+Hosted: **https://watchlens.github.io**. Source markdown:
 
 | Doc | |
 |-----|---|
