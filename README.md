@@ -1,6 +1,6 @@
 <div align="center">
 
-# WatchLens
+# WatchLens: A Configurable Platform for Online Video Recommendation Experiments
 
 [![Code License](https://img.shields.io/badge/Code%20License-MIT-blue?style=flat-square)](./LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-WatchLens-181717?style=flat-square&logo=github)](https://github.com/WatchLens/WatchLens)
