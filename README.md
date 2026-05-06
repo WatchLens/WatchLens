@@ -1,9 +1,14 @@
+<div align="center">
+
 # WatchLens
 
-A configurable, open-source platform for **online video recommendation
-experiments** — vary the UI, content pool, and recommendation policy
-independently while every interface emits the same exposure-aware event
-schema.
+[![Code License](https://img.shields.io/badge/Code%20License-MIT-blue?style=flat-square)](./LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-WatchLens-181717?style=flat-square&logo=github)](https://github.com/WatchLens/WatchLens)
+[![Docs](https://img.shields.io/badge/Docs-watchlens.github.io-f59e0b?style=flat-square)](https://watchlens.github.io)
+
+WatchLens is a configurable, open-source platform for **online video recommendation experiments** — vary the UI, content pool, and recommendation policy independently while every interface emits the same exposure-aware event schema.
+
+</div>
 
 ---
 
