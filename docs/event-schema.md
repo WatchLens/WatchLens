@@ -29,10 +29,12 @@ A single event:
 ```
 
 The `events` table stores `watch_ratio`, `watch_duration`,
-`position_in_feed`, and `algorithm` (the active recommender at emit time)
-in promoted columns; everything else lives in the `payload` JSONB column.
-Promotion exists so the analytic-hot fields land on indexes; freeform
-research data stays flexible in JSONB.
+`position_in_feed`, and the per-surface recommender keys
+(`algorithm_feed`, `algorithm_watch` — both populated on every event so
+per-surface analysis can join either column without inferring the page
+from `event_type`) in promoted columns; everything else lives in the
+`payload` JSONB column. Promotion exists so the analytic-hot fields
+land on indexes; freeform research data stays flexible in JSONB.
 
 ### Batching
 
@@ -252,6 +254,6 @@ adapter scheduled alongside the UI presets in a later phase.
 ## Adding a new payload field
 
 Promoted columns (`watch_ratio`, `watch_duration`, `position_in_feed`,
-`algorithm`) require an Alembic migration. Anything else goes inside
-`payload` and needs only a schema doc update — JSONB tolerates additions
-without migration.
+`algorithm_feed`, `algorithm_watch`) require an Alembic migration.
+Anything else goes inside `payload` and needs only a schema doc update —
+JSONB tolerates additions without migration.

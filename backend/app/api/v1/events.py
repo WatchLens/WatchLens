@@ -51,13 +51,19 @@ def create_events_batch(
             detail="Session does not belong to current user",
         )
 
-    # Get experiment_id from user's group
+    # Get experiment_id + per-surface algorithms from the user's group.
+    # Both feed and watch keys are recorded on every event so per-surface
+    # analysis can join either column without inferring the page from
+    # `event_type`. Previously only `feed` was recorded, which made watch
+    # policy effects invisible in the events table for watch-page events.
     experiment_id = None
-    algorithm = None
+    algorithm_feed = None
+    algorithm_watch = None
     if current_user.user_group:
         experiment_id = current_user.user_group.experiment_id
         algorithm_config = current_user.user_group.algorithm_config or {"feed": "random", "watch": "random"}
-        algorithm = algorithm_config.get("feed", "random")
+        algorithm_feed = algorithm_config.get("feed", "random")
+        algorithm_watch = algorithm_config.get("watch", "random")
 
     # Single bulk Video lookup: gather every external video_id referenced in
     # the batch and resolve to UUIDs in one query. Previously each event did
@@ -87,7 +93,8 @@ def create_events_batch(
             "watch_ratio": event_data.watch_ratio,
             "watch_duration": event_data.watch_duration,
             "position_in_feed": event_data.position_in_feed,
-            "algorithm": algorithm,
+            "algorithm_feed": algorithm_feed,
+            "algorithm_watch": algorithm_watch,
             "payload": event_data.payload or {},
             "client_timestamp": event_data.timestamp,
             "server_timestamp": now,

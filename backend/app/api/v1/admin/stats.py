@@ -383,14 +383,16 @@ def export_events_csv(
         for event in events_query.yield_per(1000):
             user_id = session_user_map.get(event.session_id)
             user_info = user_group_map.get(user_id, {})
-            algo_config = user_info.get("algorithm_config", {})
             external_video_id = video_map.get(event.video_id, "") if event.video_id else ""
             yield _row_bytes([
                 event.id,
                 user_info.get("login_id", ""),
                 user_info.get("group_name", ""),
-                algo_config.get("feed", "") if algo_config else "",
-                algo_config.get("watch", "") if algo_config else "",
+                # Per-event values captured at write time — the policy active
+                # when the event fired, not the group's current config (which
+                # may have been edited mid-experiment).
+                event.algorithm_feed or "",
+                event.algorithm_watch or "",
                 str(event.session_id),
                 external_video_id,
                 event.event_type,
@@ -540,7 +542,8 @@ def get_user_trajectory(
                 "watch_ratio": e.watch_ratio,
                 "watch_duration": e.watch_duration,
                 "position_in_feed": e.position_in_feed,
-                "algorithm": e.algorithm,
+                "algorithm_feed": e.algorithm_feed,
+                "algorithm_watch": e.algorithm_watch,
             })
 
         total_events += len(events)

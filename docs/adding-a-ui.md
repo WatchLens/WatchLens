@@ -320,8 +320,8 @@ Built-in dispatch lives in `pages/user/Feed.tsx` /
 `FEED_PRESETS[key].Component` for any of the keys above; otherwise the
 dispatcher hands the UUID to `<TemplateFeed>` /
 `<TemplateWatch>` for admin-authored templates. There is no separate
-`custom/` preset — it was retired when `ui_config` collapsed to flat
-keys (alembic 019).
+`custom/` preset — built-in keys and admin-authored template UUIDs are
+equal citizens of the same flat `{feed, watch}` map.
 
 ## Admin Code editor (in-browser TSX)
 

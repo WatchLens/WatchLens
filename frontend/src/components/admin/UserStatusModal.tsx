@@ -40,12 +40,13 @@ function EventRow({ event }: { event: TrajectoryEvent }) {
             {event.video_title && <span className="ml-2 text-gray-800">{event.video_title}</span>}
           </div>
         )}
-        {(ratioTxt || durTxt || event.algorithm || event.position_in_feed != null) && (
+        {(ratioTxt || durTxt || event.algorithm_feed || event.algorithm_watch || event.position_in_feed != null) && (
           <div className="text-gray-500">
             {ratioTxt && <span className="mr-2">ratio: {ratioTxt}</span>}
             {durTxt && <span className="mr-2">dur: {durTxt}</span>}
             {event.position_in_feed != null && <span className="mr-2">pos: {event.position_in_feed}</span>}
-            {event.algorithm && <span className="mr-2">algo: {event.algorithm}</span>}
+            {event.algorithm_feed && <span className="mr-2">feed: {event.algorithm_feed}</span>}
+            {event.algorithm_watch && <span className="mr-2">watch: {event.algorithm_watch}</span>}
           </div>
         )}
       </div>

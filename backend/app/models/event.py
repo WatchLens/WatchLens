@@ -34,7 +34,11 @@ class Event(Base):
     watch_ratio = Column(Float, nullable=True)  # For VIDEO_ENDED / VIDEO_WATCHED_* events
     watch_duration = Column(Float, nullable=True)  # Seconds watched
     position_in_feed = Column(Integer, nullable=True)  # For IMPRESSION, FEED_CLICK
-    algorithm = Column(String(50), nullable=True)  # Which recommender was used
+    # Recommender served on each surface at event time. Both are populated
+    # on every event so per-surface analysis can join either column without
+    # inferring the page from `event_type`.
+    algorithm_feed = Column(String(50), nullable=True)
+    algorithm_watch = Column(String(50), nullable=True)
 
     # Flexible payload for additional event-specific data
     payload = Column(JSONB, default=dict)

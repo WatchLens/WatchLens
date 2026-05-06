@@ -57,3 +57,8 @@ data/*
 # Claude Code instructions / mem-context (local only)
 CLAUDE.md
 **/CLAUDE.md
+
+# Sibling docs site repo accidentally cloned inside the code repo.
+# The actual docs site lives at ~/Project/WatchLens.github.io
+# (separate WatchLens/WatchLens.github.io GitHub repo).
+watchlens.github.io/

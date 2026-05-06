@@ -176,7 +176,8 @@ export interface TrajectoryEvent {
   watch_ratio: number | null
   watch_duration: number | null
   position_in_feed: number | null
-  algorithm: string | null
+  algorithm_feed: string | null
+  algorithm_watch: string | null
 }
 
 export interface TrajectorySession {

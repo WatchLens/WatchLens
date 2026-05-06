@@ -31,7 +31,8 @@ class EventResponse(BaseModel):
     watch_ratio: Optional[float] = None
     watch_duration: Optional[float] = None
     position_in_feed: Optional[int] = None
-    algorithm: Optional[str] = None
+    algorithm_feed: Optional[str] = None
+    algorithm_watch: Optional[str] = None
     payload: Optional[Dict[str, Any]] = None
     client_timestamp: datetime
     server_timestamp: datetime

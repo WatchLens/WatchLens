@@ -206,7 +206,7 @@ Import the model and use `db.query(Model)`:
 | Table | Model | Key fields |
 |-------|-------|-----------|
 | `videos` | `Video` (`models/video.py`) | `id`, `experiment_id`, `title`, `description`, `tags` (JSONB array), `category`, `channel_name`, `channel_id`, `view_count`, `like_count`, `dislike_count`, `duration`, `published_at`, `created_at`, `thumbnail_url`, `url`, `resolved_url` (JSONB) |
-| `events` | `Event` (`models/event.py`) | `id`, `user_id`, `video_id`, `event_type` (33 values), `payload` (JSONB), `watch_ratio`, `watch_duration`, `position_in_feed`, `algorithm`, `created_at` |
+| `events` | `Event` (`models/event.py`) | `id`, `user_id`, `video_id`, `event_type` (33 values), `payload` (JSONB), `watch_ratio`, `watch_duration`, `position_in_feed`, `algorithm_feed`, `algorithm_watch` (per-surface keys at emit time), `created_at` |
 | `users` | `User` (`models/user.py`) | `id`, `login_id`, `user_group_id`, `ui_config` |
 | `user_groups` | `UserGroup` (`models/user_group.py`) | `id`, `experiment_id`, `name`, `algorithm_config` (JSONB), `ui_config` (JSONB), `config` (JSONB) |
 | `experiments` | `Experiment` (`models/experiment.py`) | `id`, `name`, `status`, `start_date`, `end_date` |
